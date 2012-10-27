@@ -3,6 +3,8 @@
 
     "use strict;"
 
+    QUnit.module("Validator Unit");
+
     test("Testing Identiry Unit", function () {
         var identity = validator.Unit();
         var unit = identity("Hello world.");
