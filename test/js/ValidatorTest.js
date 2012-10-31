@@ -1,17 +1,9 @@
-/* globel QUnit, ok, test, validator */
+/* global QUnit, ok, test, validator */
 (function (QUnit) {
 
     "use strict;"
 
-    QUnit.module("Validator Unit");
-
-    test("Testing Identiry Unit", function () {
-        var identity = validator.Unit();
-        var unit = identity("Hello world.");
-        unit.bind(function (val) {
-            equal("Hello world.", val, "Proper Identity");
-        });
-    });
+    QUnit.module("Validator");
 
     var simpleSource = "This is source.";
     function simpleRule (source) {
@@ -19,16 +11,14 @@
     };
 
     test("Testing Register", function () {
+        validator.rules = [];
         equal(0, validator.rules.length, "No rules so far");
-        validator.register({
-            rulue: simpleRule,
-            name: "simple"
-        });
+        validator.register(simpleRule);
         equal(1, validator.rules.length, "New rule added");
-        validator.rules.pop();
     });
 
     test("Testing Rules Apply", function () {
+        validator.rules = [];
         validator.register(simpleRule);
         validator.applyRules(simpleSource);
     });
