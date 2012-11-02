@@ -77,13 +77,13 @@
 
             // Test will have 4 public methods:
             // pass and fail that will trigger the corresponding events.
-            // whenPass and whenFail let one listen for pass and fail events.
+            // onPass and onFail let one listen for pass and fail events.
             validator.map(["pass", "fail"], function (result) {
                 test[result] = function (report) {
                     test.complete = true;
                     emitter.emit(result, report);
                 };
-                test["when" + result.charAt(0).toUpperCase() + result.slice(1)] = function (callback) {
+                test["on" + result.charAt(0).toUpperCase() + result.slice(1)] = function (callback) {
                     emitter.on(result, callback);
                     return test;
                 };
@@ -126,7 +126,7 @@
 
         // Add a listener to the event that is emitted when all rules are
         // tested.
-        validator.whenComplete = function (callback) {
+        validator.onComplete = function (callback) {
             completeEmitter.on("complete", callback);
             return validator;
         };
@@ -145,6 +145,7 @@
             if (!validator.isSimpleRule(ruleObj)) {
                 rule = ruleObj.rule;
             }
+
             testObj.test = validator.test(rule);
             testObj.name = ruleObj.name || validator.id();
 
@@ -161,8 +162,8 @@
                 }
             });
 
-            validator.map(["whenPass", "whenFail"], function (when) {
-                testObj.test[when](function (report) {
+            validator.map(["onPass", "onFail"], function (on) {
+                testObj.test[on](function (report) {
                     emitter.emit(testObj.name, report);
                 });
             });

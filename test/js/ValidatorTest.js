@@ -56,10 +56,10 @@
     test("validator.test", function () {
         QUnit.expect(2);
         var test = validator.test(syncRule);
-        test.whenPass(function (report) {
+        test.onPass(function (report) {
             deepEqual(passReport, report, "Correct pass report");
         });
-        test.whenFail(function (report) {
+        test.onFail(function (report) {
             deepEqual(failReport, report, "Correct fail report");
         });
         test.run("I am a correct source");
@@ -69,10 +69,12 @@
     test("Simple Rule Apply", function () {
         QUnit.expect(1);
         validator.register(syncRule);
-        validator.whenComplete(function (log) {
-            validator.map(log, function (thisLog) {
+        validator.onComplete(function (log) {
+            var key, thisLog;
+            for (key in log) {
+                thisLog = log[key];
                 deepEqual(passReport, thisLog, "Log is correct");
-            });
+            }
         });
         validator.run(simpleSource);
     });
