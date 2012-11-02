@@ -1,0 +1,9 @@
+{
+    source: ["../tests/test1/html/*.html", "../tests/test1/css/*.css"],
+    reportFormat: "json",
+    rules: {
+        "validate.button": {
+            validationChecks: ["css", "aria"]
+        }
+    }
+}
