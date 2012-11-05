@@ -12,25 +12,20 @@
         failReport = {
             message: "Source is empty"
         },
-        simpleRule = function simpleRule (source) {
-            equal(simpleSource, source, "Source is passed correctly");
-        },
         syncRule = function (test, source) {
             if (source.length > 0) {
                 test.pass(passReport)
             } else {
                 test.fail(failReport);
             }
+        },
+        syncRuleRevert = function (test, source) {
+            if (source.length < 0) {
+                test.pass(passReport)
+            } else {
+                test.fail(failReport);
+            }
         };
-
-    test("validator.isSimpleRule", function () {
-        var tests = [{}, function () {}, "test", 1, null, undefined, NaN],
-            expected = [false, true, false, false, false, false, false, false],
-            i;
-        for (i = 0; i < tests.length; ++i) {
-            equal(expected[i], validator.isSimpleRule(tests[i]), "Simple rule is correctly identified");
-        }
-    });
 
     test("validator.emitter", function () {
         var args = ["test1", "test2"];
@@ -68,15 +63,58 @@
 
     test("Simple Rule Apply", function () {
         QUnit.expect(1);
-        validator.register(syncRule);
-        validator.onComplete(function (log) {
+        validator.register("syncRule", "Test synchronous rule", syncRule);
+        var testValidator = validator.init();
+        testValidator.configure({
+            syncRule: {}
+        });
+        testValidator.onComplete(function (log) {
             var key, thisLog;
             for (key in log) {
                 thisLog = log[key];
                 deepEqual(passReport, thisLog, "Log is correct");
             }
         });
-        validator.run(simpleSource);
+        testValidator.run(simpleSource);
+    });
+
+    test("Multiple rules apply", function () {
+        QUnit.expect(2);
+        validator.register("syncRule", "Test synchronous rule", syncRule)
+                 .register("syncRuleRevert", "Test synchronous rule revert", syncRuleRevert);
+        var testValidator = validator.init()
+            .configure({
+                 syncRule: {},
+                 syncRuleRevert: {}
+            })
+            .onComplete(function (log) {
+                var key, thisLog;
+                for (key in log) {
+                    thisLog = log[key];
+                    deepEqual(key === "syncRule" ? passReport : failReport, thisLog, "Log is correct");
+                }
+            })
+            .run(simpleSource);
+    });
+
+    test("Multiple rules applied multiple times (state is good)", function () {
+        QUnit.expect(4);
+        validator.register("syncRule", "Test synchronous rule", syncRule)
+                 .register("syncRuleRevert", "Test synchronous rule revert", syncRuleRevert);
+        var testValidator = validator.init()
+            .configure({
+                 syncRule: {},
+                 syncRuleRevert: {}
+            })
+            .onComplete(function (log) {
+                var key, thisLog;
+                for (key in log) {
+                    thisLog = log[key];
+                    deepEqual(key === "syncRule" ? passReport : failReport, thisLog, "Log is correct");
+                }
+            })
+            .run(simpleSource)
+            .run(simpleSource);
     });
     
 })(QUnit);

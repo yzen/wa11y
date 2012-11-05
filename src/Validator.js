@@ -2,12 +2,15 @@
 
     "use strict";
 
-    define(["module"], function (module) {
+    define(["module"], function () {
 
         var validator = function () {},
             // Used for dynamic id generation
             prefix = (Math.floor(Math.random() * 1e12)).toString(36) + "-",
             id = 1;
+
+        // A public map of registered tests.
+        validator.tests = {};
 
         // This is a simple map utility to iterate over an object or an array.
         // source - object or an array.
@@ -70,8 +73,7 @@
         // test.pass or test.fail appropriately.
         validator.test = function (rule) {
             var test = {
-                    rule: rule,
-                    complete: false
+                    rule: rule
                 },
                 emitter = validator.emitter();
 
@@ -80,7 +82,6 @@
             // onPass and onFail let one listen for pass and fail events.
             validator.map(["pass", "fail"], function (result) {
                 test[result] = function (report) {
-                    test.complete = true;
                     emitter.emit(result, report);
                 };
                 test["on" + result.charAt(0).toUpperCase() + result.slice(1)] = function (callback) {
@@ -109,75 +110,87 @@
             return Object.prototype.toString.call(obj) === "[object Array]";
         };
 
-        // Test if the rule is just a function.
-        validator.isSimpleRule = function (rule) {
-            return Object.prototype.toString.call(rule) === "[object Function]";
-        };
-
         // Generate unique id.
         validator.id = function () {
             return prefix + (id++);
         };
 
-        var emitter = validator.emitter(),
-            completeEmitter = validator.emitter(),
-            tests = [],
-            log = {};
+        validator.init = function () {
+            var emitter = validator.emitter(),
+                completeEmitter = validator.emitter(),
+                tests = {},
+                log = {},
+                tester = {};
 
-        // Add a listener to the event that is emitted when all rules are
-        // tested.
-        validator.onComplete = function (callback) {
-            completeEmitter.on("complete", callback);
-            return validator;
+            // Add a listener to the event that is emitted when all rules are
+            // tested.
+            tester.onComplete = function (callback) {
+                completeEmitter.on("complete", callback);
+                return tester;
+            };
+
+            // Configure the test runner.
+            tester.configure = function (config) {
+                validator.map(config, function (options, name) {
+                    var testObj = validator.tests[name];
+                    if (!testObj) {
+                        // TODO: Need generic error handling.
+                        console.log(name + " is not registered");
+                        return;
+                    }
+                    emitter.on(name, function (report) {
+                        var allComplete = testObj.complete = true;
+                        log[name] = report;
+                        validator.map(tests, function (testObj) {
+                            if (allComplete && !testObj.complete) {
+                                allComplete = false;
+                            }
+                        });
+                        if (allComplete) {
+                            completeEmitter.emit("complete", log);
+                        }
+                    });
+                    validator.map(["onPass", "onFail"], function (on) {
+                        testObj.test[on](function (report) {
+                            emitter.emit(name, report);
+                        });
+                    });
+                    tests[name] = testObj;
+                });
+                return tester;
+            };
+
+            // Test configured rules.
+            tester.run = function (source) {
+                log = {};
+                validator.map(tests, function (testObj) {
+                    testObj.complete = false;
+                });
+                validator.map(tests, function (testObj) {
+                    testObj.test.run.apply(undefined, [source]);
+                });
+                return tester;
+            };
+
+            return tester;;
         };
 
         // Register a rule for testing.
-        // ruleObj can be either:
-        // * Function (named or unnnamed) or
-        // * Object with 2 fields: rule (Function) and name (String)
-        validator.register = function (ruleObj) {
-            var testObj = {},
-                rule = ruleObj;
-
-            if (!ruleObj) {
+        // * name String - a name for the rule.
+        // * description String - a description for the rule.
+        // * rule Function - a rule that will be tested.
+        // * Returns a validator object.
+        validator.register = function (name, description, rule) {
+            if (!rule) {
                 return validator;
             }
-            if (!validator.isSimpleRule(ruleObj)) {
-                rule = ruleObj.rule;
-            }
 
-            testObj.test = validator.test(rule);
-            testObj.name = ruleObj.name || validator.id();
-
-            emitter.on(testObj.name, function (report) {
-                var complete = true;
-                log[testObj.name] = report;
-                validator.map(tests, function (testObj) {
-                    if (complete && !testObj.test.complete) {
-                        complete = false;
-                    }
-                });
-                if (complete) {
-                    completeEmitter.emit("complete", log);
-                }
-            });
-
-            validator.map(["onPass", "onFail"], function (on) {
-                testObj.test[on](function (report) {
-                    emitter.emit(testObj.name, report);
-                });
-            });
-
-            tests.push(testObj);
+            validator.tests[name || validator.id()] = {
+                test: validator.test(rule),
+                description: description
+            };
 
             return validator;
-        };
-
-        // Test all rules.
-        validator.run = function (source) {
-            validator.map(tests, function (testObj) {
-                testObj.test.run.apply(undefined, [source]);
-            });
         };
 
         return validator;
