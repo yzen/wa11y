@@ -6,6 +6,7 @@
     QUnit.module("Validator");
 
     var simpleSource = "This is source.",
+        emptySource = "",
         passReport = {
             message: "Source is not empty"
         },
@@ -20,10 +21,10 @@
             }
         },
         syncRuleRevert = function (test, source) {
-            if (source.length < 0) {
-                test.pass(passReport)
+            if (source.length < 1) {
+                test.pass(failReport)
             } else {
-                test.fail(failReport);
+                test.fail(passReport);
             }
         };
 
@@ -91,7 +92,7 @@
                 var key, thisLog;
                 for (key in log) {
                     thisLog = log[key];
-                    deepEqual(key === "syncRule" ? passReport : failReport, thisLog, "Log is correct");
+                    deepEqual(passReport, thisLog, "Log is correct");
                 }
             })
             .run(simpleSource);
@@ -110,11 +111,43 @@
                 var key, thisLog;
                 for (key in log) {
                     thisLog = log[key];
-                    deepEqual(key === "syncRule" ? passReport : failReport, thisLog, "Log is correct");
+                    deepEqual(passReport, thisLog, "Log is correct");
                 }
             })
             .run(simpleSource)
             .run(simpleSource);
+    });
+
+    test("Multiple testers", function () {
+        QUnit.expect(4);
+        validator.register("syncRule", "Test synchronous rule", syncRule)
+                 .register("syncRuleRevert", "Test synchronous rule revert", syncRuleRevert);
+        var validator1 = validator.init()
+            .configure({
+                 syncRule: {},
+                 syncRuleRevert: {}
+            })
+            .onComplete(function (log) {
+                var key, thisLog;
+                for (key in log) {
+                    thisLog = log[key];
+                    deepEqual(passReport, thisLog, "Log is correct");
+                }
+            }),
+            validator2 = validator.init()
+            .configure({
+                 syncRule: {},
+                 syncRuleRevert: {}
+            })
+            .onComplete(function (log) {
+                var key, thisLog;
+                for (key in log) {
+                    thisLog = log[key];
+                    deepEqual(failReport, thisLog, "Log is correct");
+                }
+            });
+        validator1.run(simpleSource);
+        validator2.run(emptySource);
     });
     
 })(QUnit);

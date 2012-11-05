@@ -9,8 +9,8 @@
             prefix = (Math.floor(Math.random() * 1e12)).toString(36) + "-",
             id = 1;
 
-        // A public map of registered tests.
-        validator.tests = {};
+        // A public map of registered rules.
+        validator.rules = {};
 
         // This is a simple map utility to iterate over an object or an array.
         // source - object or an array.
@@ -116,11 +116,11 @@
         };
 
         validator.init = function () {
-            var emitter = validator.emitter(),
+            var tester = {},
+                emitter = validator.emitter(),
                 completeEmitter = validator.emitter(),
                 tests = {},
-                log = {},
-                tester = {};
+                log = {};
 
             // Add a listener to the event that is emitted when all rules are
             // tested.
@@ -132,21 +132,26 @@
             // Configure the test runner.
             tester.configure = function (config) {
                 validator.map(config, function (options, name) {
-                    var testObj = validator.tests[name];
-                    if (!testObj) {
+                    var ruleObj = validator.rules[name],
+                        testObj;
+                    if (!ruleObj) {
                         // TODO: Need generic error handling.
                         console.log(name + " is not registered");
                         return;
                     }
+                    testObj = {
+                        test: validator.test(ruleObj.rule),
+                        description: ruleObj.description
+                    };
                     emitter.on(name, function (report) {
-                        var allComplete = testObj.complete = true;
+                        var testsComplete = testObj.complete = true;
                         log[name] = report;
                         validator.map(tests, function (testObj) {
-                            if (allComplete && !testObj.complete) {
-                                allComplete = false;
+                            if (testsComplete && !testObj.complete) {
+                                testsComplete = false;
                             }
                         });
-                        if (allComplete) {
+                        if (testsComplete) {
                             completeEmitter.emit("complete", log);
                         }
                     });
@@ -162,7 +167,9 @@
 
             // Test configured rules.
             tester.run = function (source) {
+                // Reset log.
                 log = {};
+                // Reset test complete status.
                 validator.map(tests, function (testObj) {
                     testObj.complete = false;
                 });
@@ -185,8 +192,8 @@
                 return validator;
             }
 
-            validator.tests[name || validator.id()] = {
-                test: validator.test(rule),
+            validator.rules[name || validator.id()] = {
+                rule: rule,
                 description: description
             };
 
