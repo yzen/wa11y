@@ -9,7 +9,7 @@ testRunner.setup({
 
 testRunner.run({
     code: {
-        path: path.resolve(__dirname, "../../src/Validator.js"),
+        path: path.resolve(__dirname, "../../Validator.js"),
         namespace: "validator"
     },
     tests: path.resolve(__dirname, "./ValidatorTest.js")

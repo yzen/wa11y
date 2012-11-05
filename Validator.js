@@ -84,10 +84,11 @@
                 test[result] = function (report) {
                     emitter.emit(result, report);
                 };
-                test["on" + result.charAt(0).toUpperCase() + result.slice(1)] = function (callback) {
-                    emitter.on(result, callback);
-                    return test;
-                };
+                test["on" + result.charAt(0).toUpperCase() + result.slice(1)] =
+                    function (callback) {
+                        emitter.on(result, callback);
+                        return test;
+                    };
             });
 
             // Run the test.
@@ -115,6 +116,9 @@
             return prefix + (id++);
         };
 
+        // Initialize validator object.
+        // After initialization user can add listeners to onComplete event
+        // and also run tests.
         validator.init = function () {
             var tester = {},
                 emitter = validator.emitter(),
@@ -179,7 +183,7 @@
                 return tester;
             };
 
-            return tester;;
+            return tester;
         };
 
         // Register a rule for testing.
@@ -205,5 +209,10 @@
     });
 
 })(typeof define === "function" && define.amd ? define : function (deps, factory) {
-    typeof exports === "object" ? module.exports = factory() : this.validator = factory();
+    var thisModule = factory();
+    if (typeof exports === "object") {
+        module.exports = thisModule;
+    } else {
+        this.validator = thisModule;
+    }
 });
