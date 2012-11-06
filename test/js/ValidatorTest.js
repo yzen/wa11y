@@ -149,5 +149,23 @@
         validator1.run(simpleSource);
         validator2.run(emptySource);
     });
+
+    test("WAI-ARIA Rule Apply", function () {
+        QUnit.expect(1);
+        var testValidator = validator.init();
+        testValidator.configure({
+            "wai-aria": {}
+        });
+        testValidator.onComplete(function (log) {
+            var key, thisLog;
+            for (key in log) {
+                thisLog = log[key];
+                deepEqual({
+                    message: "WAI-ARIA test passed."
+                }, thisLog, "Log is correct");
+            }
+        });
+        testValidator.run(simpleSource);
+    });
     
 })(QUnit);
