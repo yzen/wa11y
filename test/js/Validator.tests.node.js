@@ -9,10 +9,10 @@ testRunner.setup({
 
 testRunner.run({
     code: {
-        path: path.resolve(__dirname, "../../Validator.js"),
+        path: path.resolve(__dirname, "../../index.js"),
         namespace: "validator"
     },
-    tests: path.resolve(__dirname, "./ValidatorTest.js")
+    tests: [path.resolve(__dirname, "./Validator.tests.js"), path.resolve(__dirname, "./wai-aria.tests.js")]
 }, function (err, report) {
     console.dir(report);
 });

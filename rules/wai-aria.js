@@ -5,7 +5,7 @@
     define(function (validator) {
         var rule = function (test, source) {
             test.pass({
-                message: "WAI-ARIA test passed."
+                message: "wai-aria test passed."
             });
         };
         validator.register("wai-aria", "WAI-ARIA, the Accessible Rich " +
