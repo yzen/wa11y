@@ -1,0 +1,36 @@
+{
+    "name": "validator.js",
+    "version": "0.1.0",
+	"description": "A lightweight framework for accessibility validation of html and css resources.",
+	"keywords": ["a11y", "accessibility", "validation", "w3c", "validator"],
+	"licenses": [
+		{
+			"type": "MIT",
+			"url": "http://www.opensource.org/licenses/mit-license.php"
+		}
+	],
+	"repositories": [
+		{
+			"type": "git",
+			"url": "https://github.com/yzen/validator.js.git"
+		}
+	],
+	"bugs": "https://github.com/yzen/validator.js/issues",
+	"maintainers": [
+		{
+			"name": "Alexey Novak",
+			"web": "https://github.com/anvk"
+		},
+		{
+			"name": "Yura Zenevich",
+			"web": "https://github.com/yzen"
+		}
+	],
+	"devDependencies": {
+		"qunit": "0.5.x"
+	},
+	"main": "index",
+	"scripts": {
+		"test": "node test/js/Validator.tests.node.js"
+	}
+}
