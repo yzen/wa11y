@@ -8,13 +8,12 @@ fs.readdir(rulePath, function(err, files) {
         console.log(err);
         return;
     }
-    var i, l = files.length;
-    for (i = 0; i < l; ++i) {
+    files.forEach(function (file) {
         // Check that the file is a JavaScript file
-        if (files[i].split(".").slice(-1)[0].toLowerCase() !== "js") {
-            continue;
+        if (file.split(".").slice(-1)[0].toLowerCase() !== "js") {
+            return;
         }
-        require([rulePath, files[i]].join("/"))(validator);
-    }
+        require([rulePath, file].join("/"))(validator);
+    });
 });
 module.exports = validator;

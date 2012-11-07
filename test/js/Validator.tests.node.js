@@ -16,19 +16,18 @@ fs.readdir(testFolderPath, function(err, files) {
         console.log(err);
         return;
     }
-    var i, filePath, parts, l = files.length;
-    for (i = 0; i < l; ++i) {
-        parts = files[i].split(".");
+    files.forEach(function (file) {
+        var parts = file.split(".");
         // Check that the file is a JavaScript file
         if (parts.slice(-1)[0].toLowerCase() !== "js") {
-            continue;
+            return;
         }
         // Check that the file is not a node test file
         if (parts.slice(-2)[0].toLowerCase() === "node") {
-            continue;
+            return;
         }
-        tests.push([testFolderPath, files[i]].join("/"));
-    }
+        tests.push([testFolderPath, file].join("/"));
+    });
 
     testRunner.run({
         code: {
