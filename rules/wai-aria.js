@@ -8,12 +8,17 @@
                 message: "wai-aria test passed."
             });
         };
-        validator.register("wai-aria", "WAI-ARIA, the Accessible Rich " +
-            "Internet Applications Suite, defines a way to make Web content " +
-            "and Web applications more accessible to people with " +
-            "disabilities. It especially helps with dynamic content and " +
-            "advanced user interface controls developed with Ajax, HTML, " +
-            "JavaScript, and related technologies.", rule);
+        validator.register({
+            name: "wai-aria",
+            description: "WAI-ARIA, the Accessible Rich " +
+                "Internet Applications Suite, defines a way to make Web content " +
+                "and Web applications more accessible to people with " +
+                "disabilities. It especially helps with dynamic content and " +
+                "advanced user interface controls developed with Ajax, HTML, " +
+                "JavaScript, and related technologies.",
+            rule: rule,
+            options: {}
+        });
     });
 
 })(function (factory) {

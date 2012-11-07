@@ -64,7 +64,11 @@
 
     test("Simple Rule Apply", function () {
         QUnit.expect(1);
-        validator.register("syncRule", "Test synchronous rule", syncRule);
+        validator.register({
+            name: "syncRule",
+            description: "Test synchronous rule",
+            rule: syncRule
+        });
         var testValidator = validator.init();
         testValidator.configure({
             syncRule: {}
@@ -81,8 +85,15 @@
 
     test("Multiple rules apply", function () {
         QUnit.expect(2);
-        validator.register("syncRule", "Test synchronous rule", syncRule)
-                 .register("syncRuleRevert", "Test synchronous rule revert", syncRuleRevert);
+        validator.register({
+            name: "syncRule",
+            description: "Test synchronous rule",
+            rule: syncRule
+        }).register({
+            name: "syncRuleRevert",
+            description: "Test synchronous rule revert",
+            rule: syncRuleRevert
+        });
         var testValidator = validator.init()
             .configure({
                  syncRule: {},
@@ -100,8 +111,6 @@
 
     test("Multiple rules applied multiple times (state is good)", function () {
         QUnit.expect(4);
-        validator.register("syncRule", "Test synchronous rule", syncRule)
-                 .register("syncRuleRevert", "Test synchronous rule revert", syncRuleRevert);
         var testValidator = validator.init()
             .configure({
                  syncRule: {},
@@ -120,8 +129,6 @@
 
     test("Multiple testers", function () {
         QUnit.expect(4);
-        validator.register("syncRule", "Test synchronous rule", syncRule)
-                 .register("syncRuleRevert", "Test synchronous rule revert", syncRuleRevert);
         var validator1 = validator.init()
             .configure({
                  syncRule: {},

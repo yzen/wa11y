@@ -192,18 +192,24 @@
     };
 
     // Register a rule for testing.
-    // * name String - a name for the rule.
-    // * description String - a description for the rule.
-    // * rule Function - a rule that will be tested.
+    // * ruleObj Object - an object that contains all rule related
+    // configuration:
+    //     * name String - a name for the rule.
+    //     * description String - a description for the rule.
+    //     * rule Function - a rule that will be tested.
+    //     * options Object - options object that the rule accepts
     // * Returns a validator object.
-    validator.register = function (name, description, rule) {
-        if (!rule) {
+    validator.register = function (ruleObj) {
+        if (!ruleObj) {
             return validator;
         }
-
-        validator.rules[name || validator.id()] = {
-            rule: rule,
-            description: description
+        if (!ruleObj.rule) {
+            return validator;
+        }
+        validator.rules[ruleObj.name || validator.id()] = {
+            rule: ruleObj.rule,
+            description: ruleObj.description,
+            options: ruleObj.options
         };
 
         return validator;
