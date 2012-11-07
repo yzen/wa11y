@@ -13,7 +13,8 @@ var testFolderPath = path.resolve(__dirname, "."),    // TODO, "." path should b
     tests = [];
 fs.readdir(testFolderPath, function(err, files) {
     if (err) {
-        return console.log(err);
+        console.log(err);
+        return;
     }
     var i, filePath, parts, l = files.length;
     for (i = 0; i < l; ++i) {

@@ -5,7 +5,8 @@ var validator = require("./validator.js"),
 // Dynamically add all the rules located in the rulePath folder
 fs.readdir(rulePath, function(err, files) {
     if (err) {
-        return console.log(err);
+        console.log(err);
+        return;
     }
     var i, l = files.length;
     for (i = 0; i < l; ++i) {
