@@ -2,12 +2,12 @@
 
     "use strict";
 
-    var validator = function () {};
+    var waidator = function () {};
 
     if (module.exports) {
-        module.exports = validator;
+        module.exports = waidator;
     } else {
-        module.validator = validator;
+        module.waidator = waidator;
     }
 
     // Used for dynamic id generation
@@ -15,14 +15,14 @@
         id = 1;
 
     // A public map of registered rules.
-    validator.rules = {};
+    waidator.rules = {};
 
     // This is a simple map utility to iterate over an object or an array.
     // source - object or an array.
     // callback - function to be called upon every element of source.
-    validator.map = function (source, callback) {
+    waidator.map = function (source, callback) {
         var i, key;
-        if (validator.isArray(source)) {
+        if (waidator.isArray(source)) {
             for (i = 0; i < source.length; ++i) {
                 callback(source[i], i);
             }
@@ -40,8 +40,8 @@
                 thisSource = source[key];
             if (thisSource !== undefined) {
                 if (thisSource !== null && typeof thisSource === "object") {
-                    if (validator.isPrimitive()) {
-                        target[key] = thisTarget = validator.isArray(thisSource) ? [] : {};
+                    if (waidator.isPrimitive()) {
+                        target[key] = thisTarget = waidator.isArray(thisSource) ? [] : {};
                     }
                     mergeImpl(thisTarget, thisSource);
                 } else {
@@ -53,7 +53,7 @@
     };
 
     // Utility primarily used to merge rule options.
-    validator.merge = function (target) {
+    waidator.merge = function (target) {
         var i;
         for (var i = 1; i < arguments.length; ++i) {
             var source = arguments[i];
@@ -64,8 +64,8 @@
         return target;
     };
 
-    // This is a validator's emitter constructor function.
-    validator.emitter = function () {
+    // This is a waidator's emitter constructor function.
+    waidator.emitter = function () {
         var emitter = {
             // All listeners are stored in listeners object.
             listeners: {}
@@ -91,7 +91,7 @@
             if (!listeners) {
                 return emitter;
             }
-            validator.map(listeners, function (listener) {
+            waidator.map(listeners, function (listener) {
                 listener.apply(emitter, args);
             });
             return emitter;
@@ -108,17 +108,17 @@
     // the actual source document. All it has to do is to call test
     // test.pass or test.fail appropriately.
     // options Object - options that are used by the rule.
-    validator.test = function (rule, options) {
+    waidator.test = function (rule, options) {
         var test = {
                 rule: rule,
                 options: options
             },
-            emitter = validator.emitter();
+            emitter = waidator.emitter();
 
         // Test will have 4 public methods:
         // pass and fail that will trigger the corresponding events.
         // onPass and onFail let one listen for pass and fail events.
-        validator.map(["pass", "fail"], function (result) {
+        waidator.map(["pass", "fail"], function (result) {
             test[result] = function (report) {
                 emitter.emit(result, report);
             };
@@ -145,28 +145,28 @@
     };
 
     // Test an input value for being an array.
-    validator.isArray = function (obj) {
+    waidator.isArray = function (obj) {
         return Object.prototype.toString.call(obj) === "[object Array]";
     };
 
     // Test if the value is primitive (Function is considered primitive).
-    validator.isPrimitive = function (value) {
+    waidator.isPrimitive = function (value) {
         var type = typeof value;
         return !value || type === "string" || type === "boolean" || type === "number" || type === "function";
     };
 
     // Generate unique id.
-    validator.id = function () {
+    waidator.id = function () {
         return prefix + (id++);
     };
 
-    // Initialize validator object.
+    // Initialize waidator object.
     // After initialization user can add listeners to onComplete event
     // and also run tests.
-    validator.init = function () {
+    waidator.init = function () {
         var tester = {},
-            emitter = validator.emitter(),
-            completeEmitter = validator.emitter(),
+            emitter = waidator.emitter(),
+            completeEmitter = waidator.emitter(),
             tests = {},
             log = {};
 
@@ -179,8 +179,8 @@
 
         // Configure the test runner.
         tester.configure = function (config) {
-            validator.map(config, function (options, name) {
-                var ruleObj = validator.rules[name],
+            waidator.map(config, function (options, name) {
+                var ruleObj = waidator.rules[name],
                     testObj;
                 if (!ruleObj) {
                     // TODO: Need generic error handling.
@@ -188,14 +188,14 @@
                     return;
                 }
                 testObj = {
-                    test: validator.test(ruleObj.rule,
-                        validator.merge(ruleObj.options, options)),
+                    test: waidator.test(ruleObj.rule,
+                        waidator.merge(ruleObj.options, options)),
                     description: ruleObj.description
                 };
                 emitter.on(name, function (report) {
                     var testsComplete = testObj.complete = true;
                     log[name] = report;
-                    validator.map(tests, function (testObj) {
+                    waidator.map(tests, function (testObj) {
                         if (testsComplete && !testObj.complete) {
                             testsComplete = false;
                         }
@@ -204,7 +204,7 @@
                         completeEmitter.emit("complete", log);
                     }
                 });
-                validator.map(["onPass", "onFail"], function (on) {
+                waidator.map(["onPass", "onFail"], function (on) {
                     testObj.test[on](function (report) {
                         emitter.emit(name, report);
                     });
@@ -219,10 +219,10 @@
             // Reset log.
             log = {};
             // Reset test complete status.
-            validator.map(tests, function (testObj) {
+            waidator.map(tests, function (testObj) {
                 testObj.complete = false;
             });
-            validator.map(tests, function (testObj) {
+            waidator.map(tests, function (testObj) {
                 testObj.test.run.apply(undefined, [source]);
             });
             return tester;
@@ -238,20 +238,20 @@
     //     * description String - a description for the rule.
     //     * rule Function - a rule that will be tested.
     //     * options Object - options object that the rule accepts
-    // * Returns a validator object.
-    validator.register = function (ruleObj) {
+    // * Returns a waidator object.
+    waidator.register = function (ruleObj) {
         if (!ruleObj) {
-            return validator;
+            return waidator;
         }
         if (!ruleObj.rule) {
-            return validator;
+            return waidator;
         }
-        validator.rules[ruleObj.name || validator.id()] = {
+        waidator.rules[ruleObj.name || waidator.id()] = {
             rule: ruleObj.rule,
             description: ruleObj.description,
             options: ruleObj.options || {}
         };
 
-        return validator;
+        return waidator;
     };
 })(typeof module !== "undefined" && module.exports ? module : this);

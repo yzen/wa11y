@@ -1,3 +1,3 @@
-# validator.js
+# waidator.js
 
 A validation platform for accessibility

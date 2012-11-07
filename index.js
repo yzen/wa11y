@@ -1,4 +1,4 @@
-var validator = require("./validator.js"),
+var waidator = require("./waidator.js"),
     fs = require("fs"),
     rulePath = require("path").resolve(__dirname, "./rules/");    // TODO, "./rules/" path should be read from the configuration file 
 
@@ -13,7 +13,7 @@ fs.readdir(rulePath, function(err, files) {
         if (file.split(".").slice(-1)[0].toLowerCase() !== "js") {
             return;
         }
-        require([rulePath, file].join("/"))(validator);
+        require([rulePath, file].join("/"))(waidator);
     });
 });
-module.exports = validator;
+module.exports = waidator;

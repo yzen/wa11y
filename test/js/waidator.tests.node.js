@@ -32,7 +32,7 @@ fs.readdir(testFolderPath, function(err, files) {
     testRunner.run({
         code: {
             path: path.resolve(__dirname, "../../index.js"),
-            namespace: "validator"
+            namespace: "waidator"
         },
         tests: tests
     }, function (err, report) {

@@ -1,8 +1,8 @@
 {
-    "name": "validator.js",
+    "name": "waidator",
     "version": "0.1.0",
 	"description": "A lightweight framework for accessibility validation of html and css resources.",
-	"keywords": ["a11y", "accessibility", "validation", "w3c", "validator"],
+	"keywords": ["a11y", "accessibility", "validation", "w3c", "validator", "wai"],
 	"licenses": [
 		{
 			"type": "MIT",
@@ -12,10 +12,10 @@
 	"repositories": [
 		{
 			"type": "git",
-			"url": "https://github.com/yzen/validator.js.git"
+			"url": "https://github.com/yzen/waidator.js.git"
 		}
 	],
-	"bugs": "https://github.com/yzen/validator.js/issues",
+	"bugs": "https://github.com/yzen/waidator.js/issues",
 	"maintainers": [
 		{
 			"name": "Alexey Novak",
@@ -31,6 +31,6 @@
 	},
 	"main": "index",
 	"scripts": {
-		"test": "node test/js/Validator.tests.node.js"
+		"test": "node test/js/waidator.tests.node.js"
 	}
 }
