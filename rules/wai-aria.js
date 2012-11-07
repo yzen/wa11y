@@ -3,7 +3,9 @@
     "use strict";
 
     define(function (validator) {
-        var rule = function (test, source) {
+        // options is merged between the default ones specified with
+        // validator.register call and the options specified in config.
+        var rule = function (test, source, options) {
             test.pass({
                 message: "wai-aria test passed."
             });
@@ -17,7 +19,9 @@
                 "advanced user interface controls developed with Ajax, HTML, " +
                 "JavaScript, and related technologies.",
             rule: rule,
-            options: {}
+            options: {
+                // TODO: Here go the options for this rule.
+            }
         });
     });
 
