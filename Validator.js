@@ -33,6 +33,37 @@
         }
     };
 
+    var mergeImpl = function (target, source) {
+        var key;
+        for (key in source) {
+            var thisTarget = target[key],
+                thisSource = source[key];
+            if (thisSource !== undefined) {
+                if (thisSource !== null && typeof thisSource === "object") {
+                    if (validator.isPrimitive()) {
+                        target[key] = thisTarget = validator.isArray(thisSource) ? [] : {};
+                    }
+                    mergeImpl(thisTarget, thisSource);
+                } else {
+                    target[key] = thisSource;
+                }
+            }
+        }
+        return target;
+    };
+
+    // Utility primarily used to merge rule options.
+    validator.merge = function (target) {
+        var i;
+        for (var i = 1; i < arguments.length; ++i) {
+            var source = arguments[i];
+            if (source !== null && source !== undefined) {
+                mergeImpl(target, source);
+            }
+        }
+        return target;
+    };
+
     // This is a validator's emitter constructor function.
     validator.emitter = function () {
         var emitter = {
@@ -76,9 +107,11 @@
     // signature has 2 arguments - test (test object itself) and source -
     // the actual source document. All it has to do is to call test
     // test.pass or test.fail appropriately.
-    validator.test = function (rule) {
+    // options Object - options that are used by the rule.
+    validator.test = function (rule, options) {
         var test = {
-                rule: rule
+                rule: rule,
+                options: options
             },
             emitter = validator.emitter();
 
@@ -99,7 +132,7 @@
         // Run the test.
         test.run = function (source) {
             try {
-                test.rule.apply(undefined, [test, source]);
+                test.rule.apply(undefined, [test, source, test.options]);
             } catch (err) {
                 emitter.emit("fail", {
                     message: err.message
@@ -114,6 +147,12 @@
     // Test an input value for being an array.
     validator.isArray = function (obj) {
         return Object.prototype.toString.call(obj) === "[object Array]";
+    };
+
+    // Test if the value is primitive (Function is considered primitive).
+    validator.isPrimitive = function (value) {
+        var type = typeof value;
+        return !value || type === "string" || type === "boolean" || type === "number" || type === "function";
     };
 
     // Generate unique id.
@@ -149,7 +188,8 @@
                     return;
                 }
                 testObj = {
-                    test: validator.test(ruleObj.rule),
+                    test: validator.test(ruleObj.rule,
+                        validator.merge(ruleObj.options, options)),
                     description: ruleObj.description
                 };
                 emitter.on(name, function (report) {
@@ -192,18 +232,24 @@
     };
 
     // Register a rule for testing.
-    // * name String - a name for the rule.
-    // * description String - a description for the rule.
-    // * rule Function - a rule that will be tested.
+    // * ruleObj Object - an object that contains all rule related
+    // configuration:
+    //     * name String - a name for the rule.
+    //     * description String - a description for the rule.
+    //     * rule Function - a rule that will be tested.
+    //     * options Object - options object that the rule accepts
     // * Returns a validator object.
-    validator.register = function (name, description, rule) {
-        if (!rule) {
+    validator.register = function (ruleObj) {
+        if (!ruleObj) {
             return validator;
         }
-
-        validator.rules[name || validator.id()] = {
-            rule: rule,
-            description: description
+        if (!ruleObj.rule) {
+            return validator;
+        }
+        validator.rules[ruleObj.name || validator.id()] = {
+            rule: ruleObj.rule,
+            description: ruleObj.description,
+            options: ruleObj.options || {}
         };
 
         return validator;
