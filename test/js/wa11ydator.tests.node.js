@@ -31,8 +31,8 @@ fs.readdir(testFolderPath, function(err, files) {
 
     testRunner.run({
         code: {
-            path: path.resolve(__dirname, "../../lib/waidator.js"),
-            namespace: "waidator"
+            path: path.resolve(__dirname, "../../lib/wa11ydator.js"),
+            namespace: "wa11ydator"
         },
         tests: tests
     }, function (err, report) {

@@ -1,4 +1,4 @@
-/* global QUnit, ok, test, waidator */
+/* global QUnit, ok, test, wa11ydator */
 (function (QUnit) {
 
     "use strict;"
@@ -7,7 +7,7 @@
 
     test("wai-aria Rule Apply", function () {
         QUnit.expect(1);
-        var testValidator = waidator.init();
+        var testValidator = wa11ydator.init();
         testValidator.configure({
             "wai-aria": {}
         });

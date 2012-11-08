@@ -1,9 +1,9 @@
-/* global QUnit, ok, test, waidator */
+/* global QUnit, ok, test, wa11ydator */
 (function (QUnit) {
 
     "use strict;"
 
-    QUnit.module("waidator");
+    QUnit.module("wa11ydator");
 
     var simpleSource = "This is source.",
         emptySource = "",
@@ -35,7 +35,7 @@
             }
         };
 
-    test("waidator.merge", function () {
+    test("wa11ydator.merge", function () {
         var testMaterial = {
             targets: [{}, {simple: "old"}, {simple: "old"}, {
                 simple: "old", other: "other"}, ["test", {
@@ -51,18 +51,18 @@
                 other: "new"
             }], {test: {nested: {hello: "a"}}}]
         };
-        waidator.map(testMaterial.targets, function (target, index) {
+        wa11ydator.map(testMaterial.targets, function (target, index) {
             deepEqual(testMaterial.expected[index],
-                waidator.merge.apply(null,
+                wa11ydator.merge.apply(null,
                 [target].concat(testMaterial.sources[index])),
                 "Merging result is correct");
         });
     });
 
-    test("waidator.emitter", function () {
+    test("wa11ydator.emitter", function () {
         var args = ["test1", "test2"];
         QUnit.expect(5);
-        var emitter = waidator.emitter();
+        var emitter = wa11ydator.emitter();
         emitter.on("test1", function () {
             ok("Listener is properly fired");
         });
@@ -80,9 +80,9 @@
         emitter.emit.apply(null, ["test1"].concat(args));
     });
 
-    test("waidator.test", function () {
+    test("wa11ydator.test", function () {
         QUnit.expect(2);
-        var test = waidator.test(syncRule);
+        var test = wa11ydator.test(syncRule);
         test.onPass(function (report) {
             deepEqual(passReport, report, "Correct pass report");
         });
@@ -93,9 +93,9 @@
         test.run("");
     });
 
-    test("waidator.test with options", function () {
+    test("wa11ydator.test with options", function () {
         QUnit.expect(2);
-        var test = waidator.test(syncRuleOptions, {
+        var test = wa11ydator.test(syncRuleOptions, {
             someOption: "rule option"
         });
         test.onPass(function (report) {
@@ -107,12 +107,12 @@
 
     test("Simple Rule Apply", function () {
         QUnit.expect(1);
-        waidator.register({
+        wa11ydator.register({
             name: "syncRule",
             description: "Test synchronous rule",
             rule: syncRule
         });
-        var testValidator = waidator.init();
+        var testValidator = wa11ydator.init();
         testValidator.configure({
             syncRule: {}
         });
@@ -128,12 +128,12 @@
 
     test("Simple Sync Rule with Options Apply", function () {
         QUnit.expect(1);
-        waidator.register({
+        wa11ydator.register({
             name: "syncRuleOptions",
             description: "Test synchronous rule with options",
             rule: syncRuleOptions
         });
-        var testValidator = waidator.init();
+        var testValidator = wa11ydator.init();
         testValidator.configure({
             syncRuleOptions: {
                 someOption: "some option"
@@ -151,7 +151,7 @@
 
     test("Multiple rules apply", function () {
         QUnit.expect(2);
-        waidator.register({
+        wa11ydator.register({
             name: "syncRule",
             description: "Test synchronous rule",
             rule: syncRule
@@ -160,7 +160,7 @@
             description: "Test synchronous rule revert",
             rule: syncRuleRevert
         });
-        var testValidator = waidator.init()
+        var testValidator = wa11ydator.init()
             .configure({
                  syncRule: {},
                  syncRuleRevert: {}
@@ -177,7 +177,7 @@
 
     test("Multiple rules applied multiple times (state is scoped to a particular validator)", function () {
         QUnit.expect(4);
-        var testValidator = waidator.init()
+        var testValidator = wa11ydator.init()
             .configure({
                  syncRule: {},
                  syncRuleRevert: {}
@@ -195,7 +195,7 @@
 
     test("Multiple testers", function () {
         QUnit.expect(4);
-        var validator1 = waidator.init()
+        var validator1 = wa11ydator.init()
             .configure({
                  syncRule: {},
                  syncRuleRevert: {}
@@ -207,7 +207,7 @@
                     deepEqual(passReport, thisLog, "Log is correct");
                 }
             }),
-            validator2 = waidator.init()
+            validator2 = wa11ydator.init()
             .configure({
                  syncRule: {},
                  syncRuleRevert: {}

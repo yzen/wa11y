@@ -1,3 +1,0 @@
-#!/usr/bin/env node
-
-var waidator = require("../lib/waidator.js");

@@ -2,15 +2,15 @@
 
     "use strict";
 
-    define(function (waidator) {
+    define(function (wa11ydator) {
         // options is merged between the default ones specified with
-        // waidator.register call and the options specified in config.
+        // wa11ydator.register call and the options specified in config.
         var rule = function (test, source, options) {
             test.pass({
                 message: "wai-aria test passed."
             });
         };
-        waidator.register({
+        wa11ydator.register({
             name: "wai-aria",
             description: "WAI-ARIA, the Accessible Rich " +
                 "Internet Applications Suite, defines a way to make Web content " +
@@ -29,6 +29,6 @@
     if (typeof module !== "undefined" && module.exports) {
         module.exports = factory;
     } else {
-        factory(waidator);
+        factory(wa11ydator);
     }
 });
