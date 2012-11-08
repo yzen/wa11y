@@ -1,36 +1,49 @@
 {
     "name": "waidator",
     "version": "0.1.0",
-	"description": "A lightweight framework for accessibility validation of html and css resources.",
-	"keywords": ["a11y", "accessibility", "validation", "w3c", "validator", "wai"],
-	"licenses": [
-		{
-			"type": "MIT",
-			"url": "http://www.opensource.org/licenses/mit-license.php"
-		}
-	],
-	"repositories": [
-		{
-			"type": "git",
-			"url": "https://github.com/yzen/waidator.js.git"
-		}
-	],
-	"bugs": "https://github.com/yzen/waidator.js/issues",
-	"maintainers": [
-		{
-			"name": "Alexey Novak",
-			"web": "https://github.com/anvk"
-		},
-		{
-			"name": "Yura Zenevich",
-			"web": "https://github.com/yzen"
-		}
-	],
-	"devDependencies": {
-		"qunit": "0.5.x"
-	},
-	"main": "index",
-	"scripts": {
-		"test": "node test/js/waidator.tests.node.js"
-	}
+    "description": "A lightweight framework for accessibility validation of html and css resources.",
+    "keywords": [
+        "a11y",
+        "accessibility",
+        "validation",
+        "w3c",
+        "validator",
+        "wai"
+    ],
+    "homepage": "https://github.com/yzen/waidator.js",
+    "licenses": [
+        {
+            "type": "MIT",
+            "url": "http://www.opensource.org/licenses/mit-license.php"
+        }
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/yzen/waidator.js.git"
+    },
+    "bugs": {
+        "url": "https://github.com/yzen/waidator.js/issues"
+    },
+    "main": "lib/waidator",
+    "bin": "bin/waidator",
+    "maintainers": [
+        {
+            "name": "Alexey Novak",
+            "web": "https://github.com/anvk"
+        },
+        {
+            "name": "Yura Zenevich",
+            "web": "https://github.com/yzen"
+        }
+    ],
+    "devDependencies": {
+        "qunit": "0.5.x"
+    },
+    "engines": {
+        "node": ">= 0.6.0"
+    },
+    "preferGlobal": true,
+    "scripts": {
+        "test": "node test/js/waidator.tests.node.js"
+    }
 }
