@@ -1,16 +1,17 @@
 {
-    "name": "wa11ydator",
+    "name": "wa11y",
     "version": "0.1.0",
-    "description": "A lightweight framework for accessibility validation of html and css resources.",
+    "description": "A lightweight framework for web accessibility validation of html and css resources.",
     "keywords": [
         "a11y",
+        "web",
         "accessibility",
         "validation",
         "w3c",
         "validator",
         "wai"
     ],
-    "homepage": "https://github.com/yzen/wa11ydator.js",
+    "homepage": "https://github.com/yzen/wa11y",
     "licenses": [
         {
             "type": "MIT",
@@ -19,13 +20,13 @@
     ],
     "repository": {
         "type": "git",
-        "url": "https://github.com/yzen/wa11ydator.js.git"
+        "url": "https://github.com/yzen/wa11y.git"
     },
     "bugs": {
-        "url": "https://github.com/yzen/wa11ydator.js/issues"
+        "url": "https://github.com/yzen/wa11y/issues"
     },
-    "main": "lib/wa11ydator",
-    "bin": "bin/wa11ydator",
+    "main": "lib/wa11y",
+    "bin": "bin/wa11y",
     "maintainers": [
         {
             "name": "Alexey Novak",
@@ -44,6 +45,6 @@
     },
     "preferGlobal": true,
     "scripts": {
-        "test": "node test/js/wa11ydator.tests.node.js"
+        "test": "node test/js/wa11y.tests.node.js"
     }
 }

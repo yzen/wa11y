@@ -1,3 +1,3 @@
-# wa11ydator.js
+# wa11y
 
-A validation platform for accessibility
+A validation platform for web accessibility

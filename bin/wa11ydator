@@ -1,3 +1,0 @@
-#!/usr/bin/env node
-
-var wa11ydator = require("../lib/wa11ydator.js");

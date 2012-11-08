@@ -2,12 +2,12 @@
 
     "use strict";
 
-    var wa11ydator = function () {};
+    var wa11y = function () {};
 
     if (module.exports) {
-        module.exports = wa11ydator;
+        module.exports = wa11y;
     } else {
-        module.wa11ydator = wa11ydator;
+        module.wa11y = wa11y;
     }
 
     // Used for dynamic id generation
@@ -15,14 +15,14 @@
         id = 1;
 
     // A public map of registered rules.
-    wa11ydator.rules = {};
+    wa11y.rules = {};
 
     // This is a simple map utility to iterate over an object or an array.
     // source - object or an array.
     // callback - function to be called upon every element of source.
-    wa11ydator.map = function (source, callback) {
+    wa11y.map = function (source, callback) {
         var i, key;
-        if (wa11ydator.isArray(source)) {
+        if (wa11y.isArray(source)) {
             for (i = 0; i < source.length; ++i) {
                 callback(source[i], i);
             }
@@ -40,8 +40,8 @@
                 thisSource = source[key];
             if (thisSource !== undefined) {
                 if (thisSource !== null && typeof thisSource === "object") {
-                    if (wa11ydator.isPrimitive()) {
-                        target[key] = thisTarget = wa11ydator.isArray(thisSource) ? [] : {};
+                    if (wa11y.isPrimitive()) {
+                        target[key] = thisTarget = wa11y.isArray(thisSource) ? [] : {};
                     }
                     mergeImpl(thisTarget, thisSource);
                 } else {
@@ -53,7 +53,7 @@
     };
 
     // Utility primarily used to merge rule options.
-    wa11ydator.merge = function (target) {
+    wa11y.merge = function (target) {
         var i;
         for (var i = 1; i < arguments.length; ++i) {
             var source = arguments[i];
@@ -64,8 +64,8 @@
         return target;
     };
 
-    // This is a wa11ydator's emitter constructor function.
-    wa11ydator.emitter = function () {
+    // This is a wa11y's emitter constructor function.
+    wa11y.emitter = function () {
         var emitter = {
             // All listeners are stored in listeners object.
             listeners: {}
@@ -91,7 +91,7 @@
             if (!listeners) {
                 return emitter;
             }
-            wa11ydator.map(listeners, function (listener) {
+            wa11y.map(listeners, function (listener) {
                 listener.apply(emitter, args);
             });
             return emitter;
@@ -108,17 +108,17 @@
     // the actual source document. All it has to do is to call test
     // test.pass or test.fail appropriately.
     // options Object - options that are used by the rule.
-    wa11ydator.test = function (rule, options) {
+    wa11y.test = function (rule, options) {
         var test = {
                 rule: rule,
                 options: options
             },
-            emitter = wa11ydator.emitter();
+            emitter = wa11y.emitter();
 
         // Test will have 4 public methods:
         // pass and fail that will trigger the corresponding events.
         // onPass and onFail let one listen for pass and fail events.
-        wa11ydator.map(["pass", "fail"], function (result) {
+        wa11y.map(["pass", "fail"], function (result) {
             test[result] = function (report) {
                 emitter.emit(result, report);
             };
@@ -145,28 +145,28 @@
     };
 
     // Test an input value for being an array.
-    wa11ydator.isArray = function (obj) {
+    wa11y.isArray = function (obj) {
         return Object.prototype.toString.call(obj) === "[object Array]";
     };
 
     // Test if the value is primitive (Function is considered primitive).
-    wa11ydator.isPrimitive = function (value) {
+    wa11y.isPrimitive = function (value) {
         var type = typeof value;
         return !value || type === "string" || type === "boolean" || type === "number" || type === "function";
     };
 
     // Generate unique id.
-    wa11ydator.id = function () {
+    wa11y.id = function () {
         return prefix + (id++);
     };
 
-    // Initialize wa11ydator object.
+    // Initialize wa11y object.
     // After initialization user can add listeners to onComplete event
     // and also run tests.
-    wa11ydator.init = function () {
+    wa11y.init = function () {
         var tester = {},
-            emitter = wa11ydator.emitter(),
-            completeEmitter = wa11ydator.emitter(),
+            emitter = wa11y.emitter(),
+            completeEmitter = wa11y.emitter(),
             tests = {},
             log = {};
 
@@ -179,8 +179,8 @@
 
         // Configure the test runner.
         tester.configure = function (config) {
-            wa11ydator.map(config, function (options, name) {
-                var ruleObj = wa11ydator.rules[name],
+            wa11y.map(config, function (options, name) {
+                var ruleObj = wa11y.rules[name],
                     testObj;
                 if (!ruleObj) {
                     // TODO: Need generic error handling.
@@ -188,14 +188,14 @@
                     return;
                 }
                 testObj = {
-                    test: wa11ydator.test(ruleObj.rule,
-                        wa11ydator.merge(ruleObj.options, options)),
+                    test: wa11y.test(ruleObj.rule,
+                        wa11y.merge(ruleObj.options, options)),
                     description: ruleObj.description
                 };
                 emitter.on(name, function (report) {
                     var testsComplete = testObj.complete = true;
                     log[name] = report;
-                    wa11ydator.map(tests, function (testObj) {
+                    wa11y.map(tests, function (testObj) {
                         if (testsComplete && !testObj.complete) {
                             testsComplete = false;
                         }
@@ -204,7 +204,7 @@
                         completeEmitter.emit("complete", log);
                     }
                 });
-                wa11ydator.map(["onPass", "onFail"], function (on) {
+                wa11y.map(["onPass", "onFail"], function (on) {
                     testObj.test[on](function (report) {
                         emitter.emit(name, report);
                     });
@@ -219,10 +219,10 @@
             // Reset log.
             log = {};
             // Reset test complete status.
-            wa11ydator.map(tests, function (testObj) {
+            wa11y.map(tests, function (testObj) {
                 testObj.complete = false;
             });
-            wa11ydator.map(tests, function (testObj) {
+            wa11y.map(tests, function (testObj) {
                 testObj.test.run.apply(undefined, [source]);
             });
             return tester;
@@ -238,20 +238,20 @@
     //     * description String - a description for the rule.
     //     * rule Function - a rule that will be tested.
     //     * options Object - options object that the rule accepts
-    // * Returns a wa11ydator object.
-    wa11ydator.register = function (ruleObj) {
+    // * Returns a wa11y object.
+    wa11y.register = function (ruleObj) {
         if (!ruleObj) {
-            return wa11ydator;
+            return wa11y;
         }
         if (!ruleObj.rule) {
-            return wa11ydator;
+            return wa11y;
         }
-        wa11ydator.rules[ruleObj.name || wa11ydator.id()] = {
+        wa11y.rules[ruleObj.name || wa11y.id()] = {
             rule: ruleObj.rule,
             description: ruleObj.description,
             options: ruleObj.options || {}
         };
 
-        return wa11ydator;
+        return wa11y;
     };
 })(typeof module !== "undefined" && module.exports ? module : this);
