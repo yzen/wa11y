@@ -13,22 +13,22 @@
         failReport = {
             message: "Source is empty"
         },
-        syncRule = function (source) {
-            if (source.length > 0) {
+        syncRule = function (src) {
+            if (src.length > 0) {
                 this.pass(passReport)
             } else {
                 this.fail(failReport);
             }
         },
-        syncRuleOptions = function (source, options) {
+        syncRuleOptions = function (src, options) {
             if (options && options.someOption) {
                 this.pass(passReport)
             } else {
                 this.fail(failReport);
             }
         },
-        syncRuleRevert = function (source) {
-            if (source.length < 1) {
+        syncRuleRevert = function (src) {
+            if (src.length < 1) {
                 this.pass(failReport)
             } else {
                 this.fail(passReport);

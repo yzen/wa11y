@@ -106,7 +106,7 @@
         format: "json",
         // Severity threshold of log messages.
         severity: "INFO",
-        // Types of source files to be tested.
+        // Types of src files to be tested.
         fileTypes: ["html"]
     };
 
@@ -114,7 +114,7 @@
     // with the rule passed.
     // rule - is a function that will be applied to source to test the
     // document. It can be both synchronous and asynchronous. It's
-    // signature has 2 arguments - test (test object itself) and source -
+    // signature has 2 arguments - test (test object itself) and src -
     // the actual source document. All it has to do is to call test
     // test.pass or test.fail appropriately.
     // options Object - options that are used by the rule.
@@ -140,13 +140,13 @@
         });
 
         // Run the test.
-        test.run = function (source) {
+        test.run = function (src) {
             try {
                 test.rule.apply({
                     pass: test.pass,
                     fail: test.fail//,
                     //fileType: TODO: show file type here.
-                }, [source, test.options]);
+                }, [src, test.options]);
             } catch (err) {
                 emitter.emit("fail", {
                     message: err.message
@@ -230,7 +230,7 @@
         };
 
         // Test configured rules.
-        tester.run = function (source) {
+        tester.run = function (src) {
             // Reset log.
             log = {};
             // Reset test complete status.
@@ -238,7 +238,7 @@
                 testObj.complete = false;
             });
             wa11y.map(tests, function (testObj) {
-                testObj.test.run.apply(undefined, [source]);
+                testObj.test.run.apply(undefined, [src]);
             });
             return tester;
         };
