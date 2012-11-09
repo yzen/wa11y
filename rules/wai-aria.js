@@ -5,8 +5,8 @@
     define(function (wa11y) {
         // options is merged between the default ones specified with
         // wa11y.register call and the options specified in config.
-        var rule = function (test, source, options) {
-            test.pass({
+        var rule = function (source, options) {
+            this.pass({
                 message: "wai-aria test passed."
             });
         };

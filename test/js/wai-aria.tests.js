@@ -15,9 +15,9 @@
             var key, thisLog;
             for (key in log) {
                 thisLog = log[key];
-                deepEqual({
+                deepEqual(thisLog, {
                     message: "wai-aria test passed."
-                }, thisLog, "Log is correct");
+                }, "Log is correct");
             }
         });
         testValidator.run("Plain text source");

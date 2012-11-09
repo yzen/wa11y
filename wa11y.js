@@ -40,7 +40,7 @@
                 thisSource = source[key];
             if (thisSource !== undefined) {
                 if (thisSource !== null && typeof thisSource === "object") {
-                    if (wa11y.isPrimitive()) {
+                    if (wa11y.isPrimitive(thisTarget)) {
                         target[key] = thisTarget = wa11y.isArray(thisSource) ? [] : {};
                     }
                     mergeImpl(thisTarget, thisSource);
@@ -100,6 +100,16 @@
         return emitter;
     };
 
+    // Default test object options.
+    wa11y.testOptions = {
+        // Report Format.
+        format: "json",
+        // Severity threshold of log messages.
+        severity: "INFO",
+        // Types of source files to be tested.
+        fileTypes: ["html"]
+    };
+
     // A test object that is responsible for testing source document
     // with the rule passed.
     // rule - is a function that will be applied to source to test the
@@ -132,7 +142,11 @@
         // Run the test.
         test.run = function (source) {
             try {
-                test.rule.apply(undefined, [test, source, test.options]);
+                test.rule.apply({
+                    pass: test.pass,
+                    fail: test.fail//,
+                    //fileType: TODO: show file type here.
+                }, [source, test.options]);
             } catch (err) {
                 emitter.emit("fail", {
                     message: err.message
@@ -189,7 +203,8 @@
                 }
                 testObj = {
                     test: wa11y.test(ruleObj.rule,
-                        wa11y.merge(ruleObj.options, options)),
+                        wa11y.merge({}, wa11y.testOptions,
+                            ruleObj.options, options)),
                     description: ruleObj.description
                 };
                 emitter.on(name, function (report) {

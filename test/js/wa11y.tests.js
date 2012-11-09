@@ -13,25 +13,25 @@
         failReport = {
             message: "Source is empty"
         },
-        syncRule = function (test, source) {
+        syncRule = function (source) {
             if (source.length > 0) {
-                test.pass(passReport)
+                this.pass(passReport)
             } else {
-                test.fail(failReport);
+                this.fail(failReport);
             }
         },
-        syncRuleOptions = function (test, source, options) {
+        syncRuleOptions = function (source, options) {
             if (options && options.someOption) {
-                test.pass(passReport)
+                this.pass(passReport)
             } else {
-                test.fail(failReport);
+                this.fail(failReport);
             }
         },
-        syncRuleRevert = function (test, source) {
+        syncRuleRevert = function (source) {
             if (source.length < 1) {
-                test.pass(failReport)
+                this.pass(failReport)
             } else {
-                test.fail(passReport);
+                this.fail(passReport);
             }
         };
 
@@ -48,13 +48,14 @@
             expected: [{simple: "simple"}, {simple: "new"}, {
                 simple: "newer"
             }, {simple: "old", other: "new"}, ["wow", {
-                other: "new"
-            }], {test: {nested: {hello: "a"}}}]
+                other: "new",
+                simple: "old"
+            }], {test: {nested: ["hello"]}}]
         };
         wa11y.map(testMaterial.targets, function (target, index) {
-            deepEqual(testMaterial.expected[index],
-                wa11y.merge.apply(null,
+            deepEqual(wa11y.merge.apply(null,
                 [target].concat(testMaterial.sources[index])),
+                testMaterial.expected[index],
                 "Merging result is correct");
         });
     });
@@ -74,7 +75,7 @@
         emitter.on("test2", function () {
             var i;
             for (i = 0; i < arguments.length; ++i) {
-                equal(args[i], arguments[i], "Argument matches");
+                equal(arguments[i], args[i], "Argument matches");
             }
         });
         emitter.emit.apply(null, ["test1"].concat(args));
@@ -84,10 +85,10 @@
         QUnit.expect(2);
         var test = wa11y.test(syncRule);
         test.onPass(function (report) {
-            deepEqual(passReport, report, "Correct pass report");
+            deepEqual(report, passReport, "Correct pass report");
         });
         test.onFail(function (report) {
-            deepEqual(failReport, report, "Correct fail report");
+            deepEqual(report, failReport, "Correct fail report");
         });
         test.run("I am a correct source");
         test.run("");
@@ -99,7 +100,7 @@
             someOption: "rule option"
         });
         test.onPass(function (report) {
-            deepEqual(passReport, report, "Correct pass report");
+            deepEqual(report, passReport, "Correct pass report");
         });
         test.run("I am a correct source");
         test.run("");
@@ -120,7 +121,7 @@
             var key, thisLog;
             for (key in log) {
                 thisLog = log[key];
-                deepEqual(passReport, thisLog, "Log is correct");
+                deepEqual(thisLog, passReport, "Log is correct");
             }
         });
         testValidator.run(simpleSource);
@@ -143,7 +144,7 @@
             var key, thisLog;
             for (key in log) {
                 thisLog = log[key];
-                deepEqual(passReport, thisLog, "Log is correct");
+                deepEqual(thisLog, passReport, "Log is correct");
             }
         });
         testValidator.run(simpleSource);
@@ -169,7 +170,7 @@
                 var key, thisLog;
                 for (key in log) {
                     thisLog = log[key];
-                    deepEqual(passReport, thisLog, "Log is correct");
+                    deepEqual(thisLog, passReport, "Log is correct");
                 }
             })
             .run(simpleSource);
@@ -186,7 +187,7 @@
                 var key, thisLog;
                 for (key in log) {
                     thisLog = log[key];
-                    deepEqual(passReport, thisLog, "Log is correct");
+                    deepEqual(thisLog, passReport, "Log is correct");
                 }
             })
             .run(simpleSource)
@@ -204,7 +205,7 @@
                 var key, thisLog;
                 for (key in log) {
                     thisLog = log[key];
-                    deepEqual(passReport, thisLog, "Log is correct");
+                    deepEqual(thisLog, passReport, "Log is correct");
                 }
             }),
             validator2 = wa11y.init()
@@ -216,7 +217,7 @@
                 var key, thisLog;
                 for (key in log) {
                     thisLog = log[key];
-                    deepEqual(failReport, thisLog, "Log is correct");
+                    deepEqual(thisLog, failReport, "Log is correct");
                 }
             });
         validator1.run(simpleSource);
