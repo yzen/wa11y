@@ -171,13 +171,14 @@
         };
 
         // Run the test.
-        test.run = function (src) {
+        test.run = function (src, srcType) {
             try {
                 test.rule.apply({
                     pass: test.pass,
-                    fail: test.fail//,
-                    //fileType: TODO: show file type here.
-                }, [src, test.options]);
+                    fail: test.fail,
+                    srcType: srcType,
+                    options: test.options
+                }, [src]);
             } catch (err) {
                 emitter.emit("fail", {
                     message: err.message
@@ -272,7 +273,7 @@
                 if (!test.srcTypeSupported(srcType)) {
                     return;
                 }
-                test.run.apply(undefined, [src]);
+                test.run.apply(undefined, [src, srcType]);
             });
             return tester;
         };

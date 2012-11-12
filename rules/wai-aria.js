@@ -3,15 +3,21 @@
     "use strict";
 
     define(function (wa11y) {
-        // options is merged between the default ones specified with
-        // wa11y.register call and the options specified in config.
-        var rule = function (src, options) {
+        var rule = function (src) {
+            // this contains the following fields:
+            // pass - method to be called when the rule passes successfully.
+            // fail - method to be called when the rule fails.
+            // options - the final merged options object.
+            // srcType - the type of the current source.
             this.pass({
                 message: "wai-aria test passed."
             });
         };
+
         wa11y.register({
+            // Name of the rule.
             name: "wai-aria",
+            // Description of the WAI-ARIA rule.
             description: "WAI-ARIA, the Accessible Rich " +
                 "Internet Applications Suite, defines a way to make Web content " +
                 "and Web applications more accessible to people with " +
@@ -19,6 +25,8 @@
                 "advanced user interface controls developed with Ajax, HTML, " +
                 "JavaScript, and related technologies.",
             rule: rule,
+            // Options are merged with default wa11y-wide test options as well
+            // as options coming from the configuration..
             options: {
                 // TODO: Here go the options for this rule.
             }

@@ -20,8 +20,8 @@
                 this.fail(failReport);
             }
         },
-        syncRuleOptions = function (src, options) {
-            if (options && options.someOption) {
+        syncRuleOptions = function (src) {
+            if (this.options && this.options.someOption) {
                 this.pass(passReport)
             } else {
                 this.fail(failReport);
