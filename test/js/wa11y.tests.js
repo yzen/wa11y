@@ -20,6 +20,9 @@
                 this.fail(failReport);
             }
         },
+        asyncRule = function (src) {
+            setTimeout(syncRule.apply(this, [src]), 100);
+        },
         syncRuleOptions = function (src) {
             if (this.options && this.options.someOption) {
                 this.pass(passReport)
@@ -124,6 +127,26 @@
             "be supproted.");
     });
 
+    asyncTest("wa11y.test with async rule - pass", function () {
+        QUnit.expect(1);
+        var test = wa11y.test(asyncRule);
+        test.onPass(function (report) {
+            deepEqual(report, passReport, "Correct pass report");
+            start();
+        });
+        test.run("I am a correct source");
+    });
+
+    asyncTest("wa11y.test with async rule - fail", function () {
+        QUnit.expect(1);
+        var test = wa11y.test(asyncRule);
+        test.onFail(function (report) {
+            deepEqual(report, failReport, "Correct fail report");
+            start();
+        });
+        test.run("");
+    });
+
     test("wa11y.test with options", function () {
         QUnit.expect(2);
         var test = wa11y.test(syncRuleOptions, {
@@ -153,6 +176,28 @@
                 thisLog = log[key];
                 deepEqual(thisLog, passReport, "Log is correct");
             }
+        });
+        testValidator.run(simpleSource);
+    });
+
+    asyncTest("Simple Async Rule Apply", function () {
+        QUnit.expect(1);
+        wa11y.register({
+            name: "asyncRule",
+            description: "Test asynchronous rule",
+            rule: asyncRule
+        });
+        var testValidator = wa11y.init();
+        testValidator.configure({
+            asyncRule: {}
+        });
+        testValidator.onComplete(function (log) {
+            var key, thisLog;
+            for (key in log) {
+                thisLog = log[key];
+                deepEqual(thisLog, passReport, "Log is correct");
+            }
+            start();
         });
         testValidator.run(simpleSource);
     });
