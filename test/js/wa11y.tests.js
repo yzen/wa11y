@@ -35,6 +35,25 @@
             }
         };
 
+    test("wa11y.indexOf", function () {
+        var testMaterial = {
+            values: [2, "test", "1", "test", "test2"],
+            sources: [
+                ["1", 0, "test"],
+                ["1", 0, "test"],
+                ["1", 0, "test"],
+                "test",
+                {test: "test"}
+            ],
+            expected: [-1, 2, 0, -1, -1]
+        };
+        wa11y.map(testMaterial.expected, function (expected, index) {
+            equal(wa11y.indexOf(testMaterial.values[index],
+                testMaterial.sources[index]),
+                expected, "indexOf result is correct");
+        });
+    });
+
     test("wa11y.merge", function () {
         var testMaterial = {
             targets: [{}, {simple: "old"}, {simple: "old"}, {
@@ -82,7 +101,7 @@
     });
 
     test("wa11y.test", function () {
-        QUnit.expect(2);
+        QUnit.expect(6);
         var test = wa11y.test(syncRule);
         test.onPass(function (report) {
             deepEqual(report, passReport, "Correct pass report");
@@ -92,6 +111,17 @@
         });
         test.run("I am a correct source");
         test.run("");
+        equal(test.srcTypeSupported("css"), true, "CSS source type should" +
+            "be supproted.");
+        equal(test.srcTypeSupported("html"), true, "HTML source type should" +
+            "be supproted.");
+        var test2 = wa11y.test(syncRule, {
+            srcTypes: "html"
+        });
+        equal(test2.srcTypeSupported("css"), false, "CSS source type should" +
+            "not be supproted.");
+        equal(test2.srcTypeSupported("html"), true, "HTML source type should" +
+            "be supproted.");
     });
 
     test("wa11y.test with options", function () {

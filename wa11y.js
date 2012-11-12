@@ -33,6 +33,22 @@
         }
     };
 
+    // This is a utility to get the index of an element in the array.
+    // value - an element of the array to look for.
+    // source Array - an array to look in.
+    wa11y.indexOf = function (value, source) {
+        var i;
+        if (!wa11y.isArray(source)) {
+            return -1;
+        }
+        for (i = 0; i < source.length; ++i) {
+            if (source[i] === value) {
+                return i;
+            }
+        }
+        return -1;
+    };
+
     var mergeImpl = function (target, source) {
         var key;
         for (key in source) {
@@ -107,7 +123,7 @@
         // Severity threshold of log messages.
         severity: "INFO",
         // Types of src files to be tested.
-        fileTypes: ["html"]
+        srcTypes: "*" // "html", "css", ["html", "css"]
     };
 
     // A test object that is responsible for testing source document
@@ -121,7 +137,7 @@
     wa11y.test = function (rule, options) {
         var test = {
                 rule: rule,
-                options: options
+                options: wa11y.merge({}, wa11y.testOptions, options)
             },
             emitter = wa11y.emitter();
 
@@ -138,6 +154,21 @@
                     return test;
                 };
         });
+
+        // Verify if the source type is supported by the test.
+        test.srcTypeSupported = function (srcType) {
+            var srcTypes = test.options.srcTypes;
+            if (srcTypes === "*") {
+                return true;
+            }
+            if (!srcType) {
+                return false;
+            }
+            if (typeof srcTypes === "string") {
+                return srcType === srcTypes;
+            }
+            return wa11y.indexOf(srcType) > -1;
+        };
 
         // Run the test.
         test.run = function (src) {
@@ -203,8 +234,7 @@
                 }
                 testObj = {
                     test: wa11y.test(ruleObj.rule,
-                        wa11y.merge({}, wa11y.testOptions,
-                            ruleObj.options, options)),
+                        wa11y.merge({}, ruleObj.options, options)),
                     description: ruleObj.description
                 };
                 emitter.on(name, function (report) {
@@ -230,7 +260,7 @@
         };
 
         // Test configured rules.
-        tester.run = function (src) {
+        tester.run = function (src, srcType) {
             // Reset log.
             log = {};
             // Reset test complete status.
@@ -238,7 +268,11 @@
                 testObj.complete = false;
             });
             wa11y.map(tests, function (testObj) {
-                testObj.test.run.apply(undefined, [src]);
+                var test = testObj.test;
+                if (!test.srcTypeSupported(srcType)) {
+                    return;
+                }
+                test.run.apply(undefined, [src]);
             });
             return tester;
         };
