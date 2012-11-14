@@ -130,10 +130,8 @@
     // with the rule passed.
     // rule - is a function that will be applied to source to test the
     // document. It can be both synchronous and asynchronous. It's
-    // signature has 2 arguments - test (test object itself) and src -
-    // the actual source document. All it has to do is to call test
-    // test.pass or test.fail appropriately.
-    // options Object - options that are used by the rule.
+    // signature has 1 arguments - src - the actual source document.
+    // All it has to do is to call this.complete appropriately.
     wa11y.test = function (rule, options) {
         var test = {
                 rule: rule,
@@ -141,19 +139,16 @@
             },
             emitter = wa11y.emitter();
 
-        // Test will have 4 public methods:
-        // pass and fail that will trigger the corresponding events.
-        // onPass and onFail let one listen for pass and fail events.
-        wa11y.map(["pass", "fail"], function (result) {
-            test[result] = function (report) {
-                emitter.emit(result, report);
-            };
-            test["on" + result.charAt(0).toUpperCase() + result.slice(1)] =
-                function (callback) {
-                    emitter.on(result, callback);
-                    return test;
-                };
-        });
+        // Complete current test.
+        test.complete = function (report) {
+            emitter.emit("complete", report);
+        };
+
+        // Add a listener to the event that fires after test completes.
+        test.onComplete = function (callback) {
+            emitter.on("complete", callback);
+            return test;
+        };
 
         // Verify if the source type is supported by the test.
         test.srcTypeSupported = function (srcType) {
@@ -174,8 +169,7 @@
         test.run = function (src, srcType) {
             try {
                 test.rule.apply({
-                    pass: test.pass,
-                    fail: test.fail,
+                    complete: test.complete,
                     srcType: srcType,
                     options: test.options
                 }, [src]);
@@ -211,6 +205,7 @@
     // and also run tests.
     wa11y.init = function () {
         var tester = {},
+            inProgress = false,
             emitter = wa11y.emitter(),
             completeEmitter = wa11y.emitter(),
             tests = {},
@@ -239,6 +234,7 @@
                     description: ruleObj.description
                 };
                 emitter.on(name, function (report) {
+                    // TODO: Need a public event here.
                     var testsComplete = testObj.complete = true;
                     log[name] = report;
                     wa11y.map(tests, function (testObj) {
@@ -247,13 +243,12 @@
                         }
                     });
                     if (testsComplete) {
+                        inProgress = false;
                         completeEmitter.emit("complete", log);
                     }
                 });
-                wa11y.map(["onPass", "onFail"], function (on) {
-                    testObj.test[on](function (report) {
-                        emitter.emit(name, report);
-                    });
+                testObj.test.onComplete(function (report) {
+                    emitter.emit(name, report);
                 });
                 tests[name] = testObj;
             });
@@ -262,6 +257,11 @@
 
         // Test configured rules.
         tester.run = function (src, srcType) {
+            if (inProgress) {
+                // TODO: Need a public event here.
+                return;
+            }
+            inProgress = true;
             // Reset log.
             log = {};
             // Reset test complete status.

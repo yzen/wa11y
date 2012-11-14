@@ -15,28 +15,49 @@
         },
         syncRule = function (src) {
             if (src.length > 0) {
-                this.pass(passReport)
+                this.complete(passReport)
             } else {
-                this.fail(failReport);
+                this.complete(failReport);
             }
         },
         asyncRule = function (src) {
-            setTimeout(syncRule.apply(this, [src]), 100);
+            var test = this;
+            setTimeout(function () {
+                syncRule.apply(test, [src]);
+            }, 100);
         },
         syncRuleOptions = function (src) {
             if (this.options && this.options.someOption) {
-                this.pass(passReport)
+                this.complete(passReport)
             } else {
-                this.fail(failReport);
+                this.complete(failReport);
             }
         },
         syncRuleRevert = function (src) {
             if (src.length < 1) {
-                this.pass(failReport)
+                this.complete(failReport)
             } else {
-                this.fail(passReport);
+                this.complete(passReport);
             }
         };
+
+    wa11y.register({
+        name: "syncRule",
+        description: "Test synchronous rule",
+        rule: syncRule
+    }).register({
+        name: "asyncRule",
+        description: "Test asynchronous rule",
+        rule: asyncRule
+    }).register({
+        name: "syncRuleOptions",
+        description: "Test synchronous rule with options",
+        rule: syncRuleOptions
+    }).register({
+        name: "syncRuleRevert",
+        description: "Test synchronous rule revert",
+        rule: syncRuleRevert
+    });
 
     test("wa11y.indexOf", function () {
         var testMaterial = {
@@ -103,17 +124,27 @@
         emitter.emit.apply(null, ["test1"].concat(args));
     });
 
-    test("wa11y.test", function () {
-        QUnit.expect(6);
+    test("wa11y.test complete pass", function () {
+        QUnit.expect(1);
         var test = wa11y.test(syncRule);
-        test.onPass(function (report) {
+        test.onComplete(function (report) {
             deepEqual(report, passReport, "Correct pass report");
         });
-        test.onFail(function (report) {
+        test.run("I am a correct source");
+    });
+
+    test("wa11y.test complete fail", function () {
+        QUnit.expect(1);
+        var test = wa11y.test(syncRule);
+        test.onComplete(function (report) {
             deepEqual(report, failReport, "Correct fail report");
         });
-        test.run("I am a correct source");
         test.run("");
+    });
+
+    test("wa11y.test srcTypeSupported", function () {
+        QUnit.expect(4);
+        var test = wa11y.test(syncRule);
         equal(test.srcTypeSupported("css"), true, "CSS source type should" +
             "be supproted.");
         equal(test.srcTypeSupported("html"), true, "HTML source type should" +
@@ -130,7 +161,7 @@
     asyncTest("wa11y.test with async rule - pass", function () {
         QUnit.expect(1);
         var test = wa11y.test(asyncRule);
-        test.onPass(function (report) {
+        test.onComplete(function (report) {
             deepEqual(report, passReport, "Correct pass report");
             start();
         });
@@ -140,7 +171,7 @@
     asyncTest("wa11y.test with async rule - fail", function () {
         QUnit.expect(1);
         var test = wa11y.test(asyncRule);
-        test.onFail(function (report) {
+        test.onComplete(function (report) {
             deepEqual(report, failReport, "Correct fail report");
             start();
         });
@@ -152,7 +183,7 @@
         var test = wa11y.test(syncRuleOptions, {
             someOption: "rule option"
         });
-        test.onPass(function (report) {
+        test.onComplete(function (report) {
             deepEqual(report, passReport, "Correct pass report");
         });
         test.run("I am a correct source");
@@ -161,11 +192,6 @@
 
     test("Simple Rule Apply", function () {
         QUnit.expect(1);
-        wa11y.register({
-            name: "syncRule",
-            description: "Test synchronous rule",
-            rule: syncRule
-        });
         var testValidator = wa11y.init();
         testValidator.configure({
             syncRule: {}
@@ -182,11 +208,6 @@
 
     asyncTest("Simple Async Rule Apply", function () {
         QUnit.expect(1);
-        wa11y.register({
-            name: "asyncRule",
-            description: "Test asynchronous rule",
-            rule: asyncRule
-        });
         var testValidator = wa11y.init();
         testValidator.configure({
             asyncRule: {}
@@ -204,11 +225,6 @@
 
     test("Simple Sync Rule with Options Apply", function () {
         QUnit.expect(1);
-        wa11y.register({
-            name: "syncRuleOptions",
-            description: "Test synchronous rule with options",
-            rule: syncRuleOptions
-        });
         var testValidator = wa11y.init();
         testValidator.configure({
             syncRuleOptions: {
@@ -227,15 +243,6 @@
 
     test("Multiple rules apply", function () {
         QUnit.expect(2);
-        wa11y.register({
-            name: "syncRule",
-            description: "Test synchronous rule",
-            rule: syncRule
-        }).register({
-            name: "syncRuleRevert",
-            description: "Test synchronous rule revert",
-            rule: syncRuleRevert
-        });
         var testValidator = wa11y.init()
             .configure({
                  syncRule: {},
@@ -264,6 +271,25 @@
                     thisLog = log[key];
                     deepEqual(thisLog, passReport, "Log is correct");
                 }
+            })
+            .run(simpleSource)
+            .run(simpleSource);
+    });
+
+    asyncTest("Multiple rules applied only once since the initial run is in progress", function () {
+        QUnit.expect(2);
+        var testValidator = wa11y.init()
+            .configure({
+                 syncRule: {},
+                 asyncRule: {}
+            })
+            .onComplete(function (log) {
+                var key, thisLog;
+                for (key in log) {
+                    thisLog = log[key];
+                    deepEqual(thisLog, passReport, "Log is correct");
+                }
+                start();
             })
             .run(simpleSource)
             .run(simpleSource);

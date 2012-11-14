@@ -5,11 +5,10 @@
     define(function (wa11y) {
         var rule = function (src) {
             // this contains the following fields:
-            // pass - method to be called when the rule passes successfully.
-            // fail - method to be called when the rule fails.
+            // complete - method to be called when the rule test completes.
             // options - the final merged options object.
             // srcType - the type of the current source.
-            this.pass({
+            this.complete({
                 message: "wai-aria test passed."
             });
         };
