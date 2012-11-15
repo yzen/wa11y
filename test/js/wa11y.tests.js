@@ -59,25 +59,6 @@
         rule: syncRuleRevert
     });
 
-    test("wa11y.indexOf", function () {
-        var testMaterial = {
-            values: [2, "test", "1", "test", "test2"],
-            sources: [
-                ["1", 0, "test"],
-                ["1", 0, "test"],
-                ["1", 0, "test"],
-                "test",
-                {test: "test"}
-            ],
-            expected: [-1, 2, 0, -1, -1]
-        };
-        wa11y.each(testMaterial.expected, function (expected, index) {
-            equal(wa11y.indexOf(testMaterial.values[index],
-                testMaterial.sources[index]),
-                expected, "indexOf result is correct");
-        });
-    });
-
     test("wa11y.merge", function () {
         var testMaterial = {
             targets: [{}, {simple: "old"}, {simple: "old"}, {
