@@ -17,10 +17,10 @@
     // A public map of registered rules.
     wa11y.rules = {};
 
-    // This is a simple map utility to iterate over an object or an array.
+    // This is a simple each utility to iterate over an object or an array.
     // source - object or an array.
     // callback - function to be called upon every element of source.
-    wa11y.map = function (source, callback) {
+    wa11y.each = function (source, callback) {
         var i, key;
         if (wa11y.isArray(source)) {
             for (i = 0; i < source.length; ++i) {
@@ -107,7 +107,7 @@
             if (!listeners) {
                 return emitter;
             }
-            wa11y.map(listeners, function (listener) {
+            wa11y.each(listeners, function (listener) {
                 listener.apply(emitter, args);
             });
             return emitter;
@@ -175,7 +175,7 @@
                 }, [src]);
             } catch (err) {
                 emitter.emit("fail", {
-                    message: err.message
+                    message: err.message || err
                 });
             }
             return test;
@@ -207,25 +207,25 @@
         var tester = {},
             inProgress = false,
             emitter = wa11y.emitter(),
-            completeEmitter = wa11y.emitter(),
             tests = {},
             log = {};
 
-        // Add a listener to the event that is emitted when all rules are
-        // tested.
-        tester.onComplete = function (callback) {
-            completeEmitter.on("complete", callback);
+        // Wrapper around private tester emitter.
+        tester.on = function (type, callback) {
+            // TODO: Handle threshold here.
+            emitter.on(type, callback);
             return tester;
         };
 
         // Configure the test runner.
         tester.configure = function (config) {
-            wa11y.map(config, function (options, name) {
+            wa11y.each(config, function (options, name) {
                 var ruleObj = wa11y.rules[name],
                     testObj;
                 if (!ruleObj) {
-                    // TODO: Need generic error handling.
-                    console.log(name + " is not registered");
+                    emitter.emit("log", {
+                        ERROR: name + " is not registered."
+                    });
                     return;
                 }
                 testObj = {
@@ -234,17 +234,16 @@
                     description: ruleObj.description
                 };
                 emitter.on(name, function (report) {
-                    // TODO: Need a public event here.
                     var testsComplete = testObj.complete = true;
                     log[name] = report;
-                    wa11y.map(tests, function (testObj) {
+                    wa11y.each(tests, function (testObj) {
                         if (testsComplete && !testObj.complete) {
                             testsComplete = false;
                         }
                     });
                     if (testsComplete) {
                         inProgress = false;
-                        completeEmitter.emit("complete", log);
+                        emitter.emit("complete", log);
                     }
                 });
                 testObj.test.onComplete(function (report) {
@@ -255,20 +254,28 @@
             return tester;
         };
 
+        // Helper method that prepares wa11y instance for tests.
+        var reset = function () {
+            log = {};
+            wa11y.each(tests, function (testObj) {
+                testObj.complete = false;
+            });
+            return tester;
+        };
+
         // Test configured rules.
         tester.run = function (src, srcType) {
             if (inProgress) {
-                // TODO: Need a public event here.
+                emitter.emit("log", {
+                    INFO: "Currently in progress..."
+                }).emit("cancel", {
+                    INFO: "Cancelling..."
+                });
                 return;
             }
             inProgress = true;
-            // Reset log.
-            log = {};
-            // Reset test complete status.
-            wa11y.map(tests, function (testObj) {
-                testObj.complete = false;
-            });
-            wa11y.map(tests, function (testObj) {
+            reset();
+            wa11y.each(tests, function (testObj) {
                 var test = testObj.test;
                 if (!test.srcTypeSupported(srcType)) {
                     return;

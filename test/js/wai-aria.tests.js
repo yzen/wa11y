@@ -11,7 +11,7 @@
         testValidator.configure({
             "wai-aria": {}
         });
-        testValidator.onComplete(function (log) {
+        testValidator.on("complete", function (log) {
             var key, thisLog;
             for (key in log) {
                 thisLog = log[key];

@@ -71,7 +71,7 @@
             ],
             expected: [-1, 2, 0, -1, -1]
         };
-        wa11y.map(testMaterial.expected, function (expected, index) {
+        wa11y.each(testMaterial.expected, function (expected, index) {
             equal(wa11y.indexOf(testMaterial.values[index],
                 testMaterial.sources[index]),
                 expected, "indexOf result is correct");
@@ -95,7 +95,7 @@
                 simple: "old"
             }], {test: {nested: ["hello"]}}]
         };
-        wa11y.map(testMaterial.targets, function (target, index) {
+        wa11y.each(testMaterial.targets, function (target, index) {
             deepEqual(wa11y.merge.apply(null,
                 [target].concat(testMaterial.sources[index])),
                 testMaterial.expected[index],
@@ -196,7 +196,7 @@
         testValidator.configure({
             syncRule: {}
         });
-        testValidator.onComplete(function (log) {
+        testValidator.on("complete", function (log) {
             var key, thisLog;
             for (key in log) {
                 thisLog = log[key];
@@ -212,7 +212,7 @@
         testValidator.configure({
             asyncRule: {}
         });
-        testValidator.onComplete(function (log) {
+        testValidator.on("complete", function (log) {
             var key, thisLog;
             for (key in log) {
                 thisLog = log[key];
@@ -231,7 +231,7 @@
                 someOption: "some option"
             }
         });
-        testValidator.onComplete(function (log) {
+        testValidator.on("complete", function (log) {
             var key, thisLog;
             for (key in log) {
                 thisLog = log[key];
@@ -248,7 +248,7 @@
                  syncRule: {},
                  syncRuleRevert: {}
             })
-            .onComplete(function (log) {
+            .on("complete", function (log) {
                 var key, thisLog;
                 for (key in log) {
                     thisLog = log[key];
@@ -265,7 +265,7 @@
                  syncRule: {},
                  syncRuleRevert: {}
             })
-            .onComplete(function (log) {
+            .on("complete", function (log) {
                 var key, thisLog;
                 for (key in log) {
                     thisLog = log[key];
@@ -277,19 +277,29 @@
     });
 
     asyncTest("Multiple rules applied only once since the initial run is in progress", function () {
-        QUnit.expect(2);
+        QUnit.expect(4);
         var testValidator = wa11y.init()
             .configure({
                  syncRule: {},
                  asyncRule: {}
             })
-            .onComplete(function (log) {
+            .on("complete", function (log) {
                 var key, thisLog;
                 for (key in log) {
                     thisLog = log[key];
                     deepEqual(thisLog, passReport, "Log is correct");
                 }
                 start();
+            })
+            .on("log", function (report) {
+                deepEqual(report, {
+                    INFO: "Currently in progress..."
+                }, "Log on cancel is correct");
+            })
+            .on("cancel", function (report) {
+                deepEqual(report, {
+                    INFO: "Cancelling..."
+                }, "Cancel event report is correct");
             })
             .run(simpleSource)
             .run(simpleSource);
@@ -302,7 +312,7 @@
                  syncRule: {},
                  syncRuleRevert: {}
             })
-            .onComplete(function (log) {
+            .on("complete", function (log) {
                 var key, thisLog;
                 for (key in log) {
                     thisLog = log[key];
@@ -314,7 +324,7 @@
                  syncRule: {},
                  syncRuleRevert: {}
             })
-            .onComplete(function (log) {
+            .on("complete", function (log) {
                 var key, thisLog;
                 for (key in log) {
                     thisLog = log[key];
