@@ -17,7 +17,7 @@
     // A public map of registered rules.
     wa11y.rules = {};
 
-    // This is a simple each utility to iterate over an object or an array.
+    // This is a simple utility to iterate over an object or an array.
     // source - object or an array.
     // callback - function to be called upon every element of source.
     wa11y.each = function (source, callback) {
@@ -33,13 +33,13 @@
         }
     };
 
-    // Look up an element in an array or object based on some criteria.
+    // Lookup an element in an array or object based on some criteria.
     // source - object or an array.
     // callback - criteria function.
     wa11y.find = function (source, callback) {
         var i, val;
         if (wa11y.isArray(source)) {
-            for (i = 0; i < source; ++i) {
+            for (i = 0; i < source.length; ++i) {
                 val = callback(source[i], i);
                 if (val !== undefined) {
                     return val;
@@ -53,7 +53,23 @@
                 }
             }
         }
-    }
+    };
+
+    // This is a utility to get the index of an element in the array.
+    // value - an element of the array to look for.
+    // source Array - an array to look in.
+    wa11y.indexOf = function (value, source) {
+        var i;
+        if (!wa11y.isArray(source)) {
+            return -1;
+        }
+        for (i = 0; i < source.length; ++i) {
+            if (source[i] === value) {
+                return i;
+            }
+        }
+        return -1;
+    };
 
     // Remove elements from an array or object based on some criteria.
     // source - object or an array.
@@ -70,7 +86,7 @@
         } else {
             for (i in source) {
                 if (callback(source[i], i)) {
-                    delete source[key];
+                    delete source[i];
                 }
             }
         }
@@ -106,6 +122,22 @@
             }
         }
         return target;
+    };
+
+    // Test an input value for being an array.
+    wa11y.isArray = function (obj) {
+        return Object.prototype.toString.call(obj) === "[object Array]";
+    };
+
+    // Test if the value is primitive (Function is considered primitive).
+    wa11y.isPrimitive = function (value) {
+        var type = typeof value;
+        return !value || type === "string" || type === "boolean" || type === "number" || type === "function";
+    };
+
+    // Generate unique id.
+    wa11y.id = function () {
+        return prefix + (id++);
     };
 
     // This is a wa11y's emitter constructor function.
@@ -154,41 +186,71 @@
         srcTypes: "*" // "html", "css", ["html", "css"]
     };
 
+    // An object responsible for handling and storing settings related
+    // to severity of wa11y's test logging system.
+    wa11y.severity = function (severity) {
+        var defaultSeverities = ["INFO", "WARNING", "ERROR", "FATAL"],
+            severities = defaultSeverities.slice(wa11y.indexOf(severity,
+                defaultSeverities));
+        severities.ignore = function (severity) {
+            return wa11y.indexOf(severity, severities) < 0;
+        };
+        return severities;
+    };
+
     // A test object that is responsible for testing source document
     // with the rule passed.
     // rule - is a function that will be applied to source to test the
-    // document. It can be both synchronous and asynchronous. It's
+    // document. It can be both synchronous and asynchronous. Its
     // signature has 1 arguments - src - the actual source document.
-    // All it has to do is to call this.complete appropriately.
     wa11y.test = function (rule, options) {
         var test = {
                 rule: rule,
                 options: wa11y.merge({}, wa11y.testOptions, options)
             },
-            emitter = wa11y.emitter();
+            // Private test emitter.
+            emitter = wa11y.emitter(),
+            // Private log severity handler.
+            testSeverity = wa11y.severity(test.options.severity);
 
-        // Test will have 4 public methods:
-        // complete and log that will trigger the corresponding events.
-        // onComplete and onLog let one listen for these events.
+        // test.log - triggers "log" event.
+        // test.complete - triggers "complete" event.
         wa11y.each(["complete", "log"], function (event) {
             test[event] = function (report) {
                 emitter.emit(event, report);
             };
-            test["on" + event.charAt(0).toUpperCase() + event.slice(1)] =
-                function (callback) {
-                    emitter.on(event, callback);
-                    return test;
-                };
         });
 
-        // Add a listener to the event that fires after test completes.
-        test.onComplete = function (callback) {
-            emitter.on("complete", callback);
+        var attachListener = function (event, callback) {
+            emitter.on(event, callback);
             return test;
         };
 
+        // Attach a listener to "log" event.
+        test.onLog = function (callback) {
+            return attachListener("log", function (report) {
+                // Filter all logs below test's severity.
+                var filteredReport = {}, size = 0;
+                wa11y.each(report, function (message, severity) {
+                    if (testSeverity.ignore(severity)) {
+                        return;
+                    }
+                    filteredReport[severity] = message;
+                    ++size;
+                });
+                if (size > 0) {
+                    callback(filteredReport);
+                }
+            });
+        };
+
+        // Attach a listener to "complete" event.
+        test.onComplete = function (callback) {
+            return attachListener("complete", callback);
+        };
+
         // Verify if the source type is supported by the test.
-        test.srcTypeSupported = function (srcType) {
+        test.supports = function (srcType) {
             var srcTypes = test.options.srcTypes;
             if (srcTypes === "*") {
                 return true;
@@ -199,11 +261,7 @@
             if (typeof srcTypes === "string") {
                 return srcType === srcTypes;
             }
-            return wa11y.find(test.options.srcTypes, function (type) {
-                if (type === srcType) {
-                    return true;
-                }
-            });
+            return wa11y.indexOf(srcType, test.options.srcTypes) > -1;
         };
 
         // Run the test.
@@ -211,34 +269,20 @@
             try {
                 test.rule.apply({
                     complete: test.complete,
+                    log: test.log,
                     srcType: srcType,
                     options: test.options
                 }, [src]);
             } catch (err) {
-                emitter.emit("fail", {
-                    message: err.message || err
+                test.log({
+                    FATAL: "Error during rule evaluation: " +
+                        (err.message || err)
                 });
             }
             return test;
         };
 
         return test;
-    };
-
-    // Test an input value for being an array.
-    wa11y.isArray = function (obj) {
-        return Object.prototype.toString.call(obj) === "[object Array]";
-    };
-
-    // Test if the value is primitive (Function is considered primitive).
-    wa11y.isPrimitive = function (value) {
-        var type = typeof value;
-        return !value || type === "string" || type === "boolean" || type === "number" || type === "function";
-    };
-
-    // Generate unique id.
-    wa11y.id = function () {
-        return prefix + (id++);
     };
 
     // Initialize wa11y object.
@@ -326,7 +370,7 @@
             reset();
             wa11y.each(tests, function (testObj) {
                 var test = testObj.test;
-                if (!test.srcTypeSupported(srcType)) {
+                if (!test.supports(srcType)) {
                     return;
                 }
                 test.run.apply(undefined, [src, srcType]);
