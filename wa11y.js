@@ -304,7 +304,10 @@
 
         // Configure the test runner.
         tester.configure = function (config) {
-            wa11y.each(config, function (options, name) {
+            if (!config.rules) {
+                return tester;
+            }
+            wa11y.each(config.rules, function (options, name) {
                 var ruleObj = wa11y.rules[name],
                     testObj;
                 if (!ruleObj) {

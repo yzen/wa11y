@@ -253,7 +253,9 @@
         QUnit.expect(1);
         var testValidator = wa11y.init();
         testValidator.configure({
-            syncRule: {}
+            rules: {
+                syncRule: {}
+            }
         });
         testValidator.on("complete", function (log) {
             var key, thisLog;
@@ -269,7 +271,9 @@
         QUnit.expect(1);
         var testValidator = wa11y.init();
         testValidator.configure({
-            asyncRule: {}
+            rules: {
+                asyncRule: {}
+            }
         });
         testValidator.on("complete", function (log) {
             var key, thisLog;
@@ -286,8 +290,10 @@
         QUnit.expect(1);
         var testValidator = wa11y.init();
         testValidator.configure({
-            syncRuleOptions: {
-                someOption: "some option"
+            rules: {
+                syncRuleOptions: {
+                    someOption: "some option"
+                }
             }
         });
         testValidator.on("complete", function (log) {
@@ -304,8 +310,10 @@
         QUnit.expect(2);
         var testValidator = wa11y.init()
             .configure({
-                 syncRule: {},
-                 syncRuleRevert: {}
+                rules: {
+                    syncRule: {},
+                    syncRuleRevert: {}
+                }
             })
             .on("complete", function (log) {
                 var key, thisLog;
@@ -322,8 +330,10 @@
             QUnit.expect(4);
             var testValidator = wa11y.init()
                 .configure({
-                     syncRule: {},
-                     syncRuleRevert: {}
+                    rules: {
+                        syncRule: {},
+                        syncRuleRevert: {}
+                    }
                 })
                 .on("complete", function (log) {
                     var key, thisLog;
@@ -342,8 +352,10 @@
             QUnit.expect(4);
             var testValidator = wa11y.init()
                 .configure({
-                     syncRule: {},
-                     asyncRule: {}
+                    rules: {
+                        syncRule: {},
+                        asyncRule: {}
+                    }
                 })
                 .on("complete", function (log) {
                     var key, thisLog;
@@ -372,8 +384,10 @@
         QUnit.expect(4);
         var validator1 = wa11y.init()
             .configure({
-                 syncRule: {},
-                 syncRuleRevert: {}
+                rules: {
+                    syncRule: {},
+                    syncRuleRevert: {}
+                }
             })
             .on("complete", function (log) {
                 var key, thisLog;
@@ -384,8 +398,10 @@
             }),
             validator2 = wa11y.init()
             .configure({
-                 syncRule: {},
-                 syncRuleRevert: {}
+                rules: {
+                    syncRule: {},
+                    syncRuleRevert: {}
+                }
             })
             .on("complete", function (log) {
                 var key, thisLog;
