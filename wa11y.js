@@ -10,10 +10,6 @@
         module.wa11y = wa11y;
     }
 
-    // Used for dynamic id generation
-    var prefix = (Math.floor(Math.random() * 1e12)).toString(36) + "-",
-        id = 1;
-
     // A public map of registered rules.
     wa11y.rules = {};
 
@@ -133,11 +129,6 @@
     wa11y.isPrimitive = function (value) {
         var type = typeof value;
         return !value || type === "string" || type === "boolean" || type === "number" || type === "function";
-    };
-
-    // Generate unique id.
-    wa11y.id = function () {
-        return prefix + (id++);
     };
 
     // This is a wa11y's emitter constructor function.
@@ -396,10 +387,10 @@
         if (!ruleObj) {
             return wa11y;
         }
-        if (!ruleObj.rule) {
+        if (!ruleObj.rule || !ruleObj.name) {
             return wa11y;
         }
-        wa11y.rules[ruleObj.name || wa11y.id()] = {
+        wa11y.rules[ruleObj.name] = {
             rule: ruleObj.rule,
             description: ruleObj.description,
             options: ruleObj.options || {}
