@@ -9,7 +9,9 @@
         QUnit.expect(1);
         var testValidator = wa11y.init();
         testValidator.configure({
-            "wai-aria": {}
+            rules: {
+                "wai-aria": {}
+            }
         });
         testValidator.on("complete", function (log) {
             var key, thisLog;
