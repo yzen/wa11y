@@ -8,10 +8,16 @@
     var simpleSource = "This is source.",
         emptySource = "",
         passReport = {
-            message: "Source is not empty"
+            INFO: "Source is not empty"
+        },
+        expectedPassReport = {
+            INFO: ["Source is not empty"]
         },
         failReport = {
-            message: "Source is empty"
+            ERROR: "Source is empty"
+        },
+        expectedFailReport = {
+            ERROR: ["Source is empty"]
         },
         syncRule = function (src) {
             if (src.length > 0) {
@@ -170,6 +176,38 @@
         emitter.emit.apply(null, ["test1"].concat(args));
     });
 
+    test("wa11y.logger", function () {
+        expect(3);
+        var logger = wa11y.logger();
+        logger.onLog(function (report) {
+            deepEqual(report, {INFO: "test"}, "Correct log report");
+        });
+        logger.log({INFO: "test"});
+
+        logger = wa11y.logger();
+        logger.onLog(function (report) {
+            deepEqual(report, {ERROR: "test"}, "Correct log report");
+        });
+        logger.log({ERROR: "test"});
+
+        logger = wa11y.logger({
+            severity: "ERROR"
+        });
+        logger.onLog(function (report) {
+            // This should not fire
+            deepEqual(report, {WARNING: "test"}, "Correct log report");
+        });
+        logger.log({WARNING: "test"});
+
+        logger = wa11y.logger({
+            severity: "ERROR"
+        });
+        logger.onLog(function (report) {
+            deepEqual(report, {FATAL: "test FATAL"}, "Correct log report");
+        });
+        logger.log({FATAL: "test FATAL"});
+    });
+
     test("wa11y.test complete pass", function () {
         QUnit.expect(1);
         var test = wa11y.test(syncRule);
@@ -185,7 +223,7 @@
         test.onComplete(function (report) {
             ok("This should never be called");
         });
-        test.onLog(function (report) {
+        test.onFail(function (report) {
             equal(report.FATAL.indexOf("Error during rule evaluation: "), 0,
                 "Correct FATAL report");
         });
@@ -261,7 +299,7 @@
             var key, thisLog;
             for (key in log) {
                 thisLog = log[key];
-                deepEqual(thisLog, passReport, "Log is correct");
+                deepEqual(thisLog, expectedPassReport, "Log is correct");
             }
         });
         testValidator.run(simpleSource);
@@ -279,7 +317,7 @@
             var key, thisLog;
             for (key in log) {
                 thisLog = log[key];
-                deepEqual(thisLog, passReport, "Log is correct");
+                deepEqual(thisLog, expectedPassReport, "Log is correct");
             }
             start();
         });
@@ -300,7 +338,7 @@
             var key, thisLog;
             for (key in log) {
                 thisLog = log[key];
-                deepEqual(thisLog, passReport, "Log is correct");
+                deepEqual(thisLog, expectedPassReport, "Log is correct");
             }
         });
         testValidator.run(simpleSource);
@@ -319,7 +357,7 @@
                 var key, thisLog;
                 for (key in log) {
                     thisLog = log[key];
-                    deepEqual(thisLog, passReport, "Log is correct");
+                    deepEqual(thisLog, expectedPassReport, "Log is correct");
                 }
             })
             .run(simpleSource);
@@ -339,7 +377,7 @@
                     var key, thisLog;
                     for (key in log) {
                         thisLog = log[key];
-                        deepEqual(thisLog, passReport, "Log is correct");
+                        deepEqual(thisLog, expectedPassReport, "Log is correct");
                     }
                 })
                 .run(simpleSource)
@@ -349,7 +387,7 @@
 
     asyncTest("Multiple rules applied only once since the initial run is in progress",
         function () {
-            QUnit.expect(4);
+            QUnit.expect(3);
             var testValidator = wa11y.init()
                 .configure({
                     rules: {
@@ -361,19 +399,13 @@
                     var key, thisLog;
                     for (key in log) {
                         thisLog = log[key];
-                        deepEqual(thisLog, passReport, "Log is correct");
+                        deepEqual(thisLog, expectedPassReport, "Log is correct");
                     }
                     start();
                 })
-                .on("log", function (report) {
-                    deepEqual(report, {
-                        INFO: "Currently in progress..."
-                    }, "Log on cancel is correct");
-                })
                 .on("cancel", function (report) {
-                    deepEqual(report, {
-                        INFO: "Cancelling..."
-                    }, "Cancel event report is correct");
+                    equal(report, "Tester is in progress. Cancelling...",
+                        "Cancel event report is correct");
                 })
                 .run(simpleSource)
                 .run(simpleSource);
@@ -393,7 +425,7 @@
                 var key, thisLog;
                 for (key in log) {
                     thisLog = log[key];
-                    deepEqual(thisLog, passReport, "Log is correct");
+                    deepEqual(thisLog, expectedPassReport, "Log is correct");
                 }
             }),
             validator2 = wa11y.init()
@@ -407,7 +439,7 @@
                 var key, thisLog;
                 for (key in log) {
                     thisLog = log[key];
-                    deepEqual(thisLog, failReport, "Log is correct");
+                    deepEqual(thisLog, expectedFailReport, "Log is correct");
                 }
             });
         validator1.run(simpleSource);
