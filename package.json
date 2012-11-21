@@ -37,8 +37,11 @@
             "web": "https://github.com/yzen"
         }
     ],
+    "dependencies": {
+        "sizzle": ">=1.1.0"
+    },
     "devDependencies": {
-        "qunit": "0.5.x"
+        "qunit": ">=0.5.0"
     },
     "engines": {
         "node": ">= 0.6.0"
