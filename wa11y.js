@@ -1,13 +1,13 @@
-(function (module) {
+(function () {
 
     "use strict";
 
     var wa11y = function () {};
 
-    if (module.exports) {
+    if (typeof module !== "undefined" && module.exports) {
         module.exports = wa11y;
     } else {
-        module.wa11y = wa11y;
+        window.wa11y = wa11y;
     }
 
     // A public map of registered rules.
@@ -434,4 +434,4 @@
 
         return wa11y;
     };
-})(typeof module !== "undefined" && module.exports ? module : this);
+})();
