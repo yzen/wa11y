@@ -4,7 +4,9 @@
 
     var wa11y = function () {};
 
-    if (typeof module !== "undefined" && module.exports) {
+    wa11y.isNode = typeof module !== "undefined" && module.exports;
+
+    if (wa11y.isNode) {
         module.exports = wa11y;
     } else {
         window.wa11y = wa11y;
@@ -111,7 +113,7 @@
     // Utility primarily used to merge rule options.
     wa11y.merge = function (target) {
         var i;
-        for (var i = 1; i < arguments.length; ++i) {
+        for (i = 1; i < arguments.length; ++i) {
             var source = arguments[i];
             if (source !== null && source !== undefined) {
                 mergeImpl(target, source);
@@ -204,7 +206,7 @@
                 if (size > 0) {
                     callback(filteredReport);
                 }
-            }
+            };
             // Only apply callback if severity is appropriate.
             emitter.on("log", callbackWithSeverity);
             return logger;
@@ -287,12 +289,13 @@
         };
 
         // Run the test.
-        test.run = function (src, srcType) {
+        test.run = function (src, srcType, engine) {
             try {
                 test.rule.apply({
                     complete: test.complete,
                     log: test.log,
                     srcType: srcType,
+                    engine: engine,
                     options: test.options
                 }, [src]);
             } catch (err) {
@@ -317,6 +320,7 @@
             inProgress = false,
             emitter = wa11y.emitter(),
             tests = {},
+            engine = wa11y.engine(),
             log = {};
 
         // Wrapper around private tester emitter.
@@ -392,18 +396,28 @@
 
         // Test configured rules.
         tester.run = function (src, srcType) {
+            if (!src) {
+                emitter.emit("fail", "No source supplied.");
+                return;
+            }
             if (inProgress) {
                 emitter.emit("cancel", "Tester is in progress. Cancelling...");
                 return;
             }
             inProgress = true;
             reset();
-            wa11y.each(tests, function (testObj) {
-                var test = testObj.test;
-                if (!test.supports(srcType)) {
+            engine.process(src, function (err, engine) {
+                if (err) {
+                    emitter.emit("fail", "Error during document processing: " + err);
                     return;
                 }
-                test.run.apply(undefined, [src, srcType]);
+                wa11y.each(tests, function (testObj) {
+                    var test = testObj.test;
+                    if (!test.supports(srcType)) {
+                        return;
+                    }
+                    test.run.apply(undefined, [src, srcType, engine]);
+                });
             });
             return tester;
         };
@@ -434,4 +448,61 @@
 
         return wa11y;
     };
+
+    // Process source with wa11y selectors engine.
+    wa11y.engine = function () {
+        var engine = {},
+            readEngineSource = function (srcPath, callback) {
+                require("fs").readFile(require("path").resolve(__dirname, srcPath),
+                    "utf-8", callback);
+            },
+            wrap = function (engine, doc) {
+                return {
+                    find: function (selector) {
+                        return engine(selector, doc);
+                    }
+                };
+            };
+
+        engine.process = function (src, callback) {
+            var doc, wrapper;
+            if (wa11y.isNode) {
+                readEngineSource("./node_modules/sizzle/sizzle.js", function (err, data) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    require("jsdom").env({
+                        html: src,
+                        src: data,
+                        done: function (err, window) {
+                            if (err) {
+                                callback(err);
+                                return;
+                            }
+                            wrapper = wrap(window.Sizzle, window.document);
+                            callback(undefined, wrapper);
+                        }
+                    });
+                });
+            } else {
+                if (src) {
+                    doc = document.implementation.createHTMLDocument("");
+                    doc.documentElement.innerHTML = src;
+                } else {
+                    doc = document;
+                }
+                if (!Sizzle) {
+                    callback(new Error("Missing selectors engine [Sizzle]."));
+                    return;
+                }
+                wrapper = wrap(Sizzle, doc);
+                callback(undefined, wrapper);
+            }
+            return engine;
+        };
+
+        return engine;
+    };
+
 })();

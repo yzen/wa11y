@@ -5,7 +5,7 @@
 
     QUnit.module("wai-aria");
 
-    test("wai-aria Rule Apply", function () {
+    asyncTest("wai-aria Rule Apply", function () {
         QUnit.expect(1);
         var testValidator = wa11y.init();
         testValidator.configure({
@@ -21,8 +21,9 @@
                     message: ["wai-aria test passed."]
                 }, "Log is correct");
             }
+            start();
         });
-        testValidator.run("Plain text source");
+        testValidator.run('<p><a class="the-link" href="https://github.com/yzen/wa11y">wa11y\'s Homepage</a></p>');
     });
     
 })(QUnit);

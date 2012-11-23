@@ -5,7 +5,7 @@
 
     QUnit.module("wa11y");
 
-    var simpleSource = "This is source.",
+    var simpleSource = '<p><a class="the-link" href="https://github.com/yzen/wa11y">wa11y\'s Homepage</a></p>',
         emptySource = "",
         passReport = {
             INFO: "Source is not empty"
@@ -287,7 +287,7 @@
         test.run("");
     });
 
-    test("Simple Rule Apply", function () {
+    asyncTest("Simple Rule Apply", function () {
         QUnit.expect(1);
         var testValidator = wa11y.init();
         testValidator.configure({
@@ -301,6 +301,7 @@
                 thisLog = log[key];
                 deepEqual(thisLog, expectedPassReport, "Log is correct");
             }
+            start();
         });
         testValidator.run(simpleSource);
     });
@@ -324,7 +325,7 @@
         testValidator.run(simpleSource);
     });
 
-    test("Simple Sync Rule with Options Apply", function () {
+    asyncTest("Simple Sync Rule with Options Apply", function () {
         QUnit.expect(1);
         var testValidator = wa11y.init();
         testValidator.configure({
@@ -340,11 +341,12 @@
                 thisLog = log[key];
                 deepEqual(thisLog, expectedPassReport, "Log is correct");
             }
+            start();
         });
         testValidator.run(simpleSource);
     });
 
-    test("Multiple rules apply", function () {
+    asyncTest("Multiple rules apply", function () {
         QUnit.expect(2);
         var testValidator = wa11y.init()
             .configure({
@@ -359,31 +361,10 @@
                     thisLog = log[key];
                     deepEqual(thisLog, expectedPassReport, "Log is correct");
                 }
+                start();
             })
             .run(simpleSource);
     });
-
-    test("Multiple rules applied multiple times (state is scoped to a particular validator)",
-        function () {
-            QUnit.expect(4);
-            var testValidator = wa11y.init()
-                .configure({
-                    rules: {
-                        syncRule: {},
-                        syncRuleRevert: {}
-                    }
-                })
-                .on("complete", function (log) {
-                    var key, thisLog;
-                    for (key in log) {
-                        thisLog = log[key];
-                        deepEqual(thisLog, expectedPassReport, "Log is correct");
-                    }
-                })
-                .run(simpleSource)
-                .run(simpleSource);
-        }
-    );
 
     asyncTest("Multiple rules applied only once since the initial run is in progress",
         function () {
@@ -412,9 +393,10 @@
         }
     );
 
-    test("Multiple testers", function () {
-        QUnit.expect(4);
-        var validator1 = wa11y.init()
+    asyncTest("Multiple testers", function () {
+        QUnit.expect(3);
+        var i = 0,
+            validator1 = wa11y.init()
             .configure({
                 rules: {
                     syncRule: {},
@@ -427,6 +409,10 @@
                     thisLog = log[key];
                     deepEqual(thisLog, expectedPassReport, "Log is correct");
                 }
+                ++i;
+                if (i > 1) {
+                    start();
+                }
             }),
             validator2 = wa11y.init()
             .configure({
@@ -435,11 +421,11 @@
                     syncRuleRevert: {}
                 }
             })
-            .on("complete", function (log) {
-                var key, thisLog;
-                for (key in log) {
-                    thisLog = log[key];
-                    deepEqual(thisLog, expectedFailReport, "Log is correct");
+            .on("fail", function (log) {
+                equal(log, "No source supplied.", "Log is correct");
+                ++i;
+                if (i > 1) {
+                    start();
                 }
             });
         validator1.run(simpleSource);
