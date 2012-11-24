@@ -112,6 +112,47 @@
         });
     });
 
+    test("wa11y.isHTML", function () {
+        var testMaterial = {
+            values: ["<a></a>", "hello <test><test/>", "no html at all",
+                "a {some stuff: hello}", "<p/>testing"],
+            expected: [true, true, false, false, true]
+        };
+        wa11y.each(testMaterial.expected, function (expected, index) {
+            equal(wa11y.isHTML(testMaterial.values[index]),
+                expected, "isHTML result is correct");
+        });
+    });
+
+    test("wa11y.isCSS", function () {
+        var testMaterial = {
+            values: ["a {}", "you you {test: hello}", "hello",
+                "a {some stuff: hello}\nb {some other: works}",
+                "a {} <p/>testing", "<a></a>", "<a>hello</a>"],
+            expected: [true, true, false, true, true, false, false]
+        };
+        wa11y.each(testMaterial.expected, function (expected, index) {
+            equal(wa11y.isCSS(testMaterial.values[index]),
+                expected, "isCSS result is correct");
+        });
+    });
+
+    test("wa11y.getSrcType", function () {
+        var testMaterial = {
+            values: ["<a></a>", "hello <test><test/>", "no html at all",
+                "a {some stuff: hello}", "<p/>testing", "a {}",
+                "you you {test: hello}", "hello",
+                "a {some stuff: hello}\nb {some other: works}",
+                "a {} <p/>testing", "<a></a>", "<a>hello</a>"],
+            expected: ["html", "html", undefined, "css", "html", "css", "css",
+                undefined, "css", "html", "html", "html"]
+        };
+        wa11y.each(testMaterial.expected, function (expected, index) {
+            equal(wa11y.getSrcType(testMaterial.values[index]),
+                expected, "getSrcType result is correct");
+        });
+    });
+
     test("wa11y.find", function () {
         var criteria = function (val, keyOrIndex) {
             if (val === "find") {return keyOrIndex;}

@@ -310,6 +310,65 @@
         return test;
     };
 
+    // Lightly test if string source might contain html.
+    wa11y.isHTML = function (source) {
+        return !!source.match(/([\<])([^\>]{1,})*([\>])/i);
+    };
+
+    // Lightly test if string source might contain html.
+    wa11y.isCSS = function (source) {
+        return !!source.match(/(?:\s*\S+\s*{[^}]*})+/i);
+    };
+
+    // Infer source type based on the source string content.
+    wa11y.getSrcType = function (source) {
+        return wa11y.find(["html", "css"], function (type) {
+            if (wa11y["is" + type.toUpperCase()](source)) {
+                return type;
+            }
+        });
+    };
+
+    wa11y.tester = function (rule, options) {
+        var tester = {
+                test: wa11y.test(rule, options)
+            },
+            emitter = wa11y.emitter();
+
+        // Wrapper around private tester emitter.
+        tester.on = function (type, callback) {
+            emitter.on(type, callback);
+            return tester;
+        };
+
+        tester.run = function (sources) {
+            wa11y.each(sources, function (src) {
+                var srcType = wa11y.getSrcTyp(src),
+                    engine;
+                if (!srcType) {
+                    emitter.emit("fail", "Source not supported: " + src);
+                    return;
+                }
+                engine = wa11y.engine[srcType]();
+
+                wa11y.each(["onComplete", "onFail"], function (listener) {
+                    test[listener](function (report) {
+                        emitter.emit(name, report);
+                    });
+                });
+                engine.process(src, function (err, engine) {
+                    if (err) {
+                        emitter.emit("fail", "Error during document processing: " + err);
+                        return;
+                    }
+                    test.run.apply(undefined, [src, srcType, engine]);
+                });
+            });
+        };
+
+        return tester;
+    };
+
     // Initialize wa11y object.
     // After initialization user can add listeners to onComplete event
     // and also run tests.
