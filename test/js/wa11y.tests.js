@@ -5,7 +5,8 @@
 
     QUnit.module("wa11y");
 
-    var simpleSource = '<p><a class="the-link" href="https://github.com/yzen/wa11y">wa11y\'s Homepage</a></p>',
+    var _ = wa11y.operators,
+        simpleSource = '<p><a class="the-link" href="https://github.com/yzen/wa11y">wa11y\'s Homepage</a></p>',
         emptySource = "",
         passReport = {
             INFO: "Source is not empty"
@@ -85,8 +86,8 @@
                 simple: "old"
             }], {test: {nested: ["hello"]}}]
         };
-        wa11y.each(testMaterial.targets, function (target, index) {
-            deepEqual(wa11y.merge.apply(null,
+        _.each(testMaterial.targets, function (target, index) {
+            deepEqual(_.merge.apply(null,
                 [target].concat(testMaterial.sources[index])),
                 testMaterial.expected[index],
                 "Merging result is correct");
@@ -105,8 +106,8 @@
             ],
             expected: [-1, 2, 0, -1, -1]
         };
-        wa11y.each(testMaterial.expected, function (expected, index) {
-            equal(wa11y.indexOf(testMaterial.values[index],
+        _.each(testMaterial.expected, function (expected, index) {
+            equal(_.indexOf(testMaterial.values[index],
                 testMaterial.sources[index]),
                 expected, "indexOf result is correct");
         });
@@ -118,7 +119,7 @@
                 "a {some stuff: hello}", "<p/>testing"],
             expected: [true, true, false, false, true]
         };
-        wa11y.each(testMaterial.expected, function (expected, index) {
+        _.each(testMaterial.expected, function (expected, index) {
             equal(wa11y.isHTML(testMaterial.values[index]),
                 expected, "isHTML result is correct");
         });
@@ -131,7 +132,7 @@
                 "a {} <p/>testing", "<a></a>", "<a>hello</a>"],
             expected: [true, true, false, true, true, false, false]
         };
-        wa11y.each(testMaterial.expected, function (expected, index) {
+        _.each(testMaterial.expected, function (expected, index) {
             equal(wa11y.isCSS(testMaterial.values[index]),
                 expected, "isCSS result is correct");
         });
@@ -147,7 +148,7 @@
             expected: ["html", "html", undefined, "css", "html", "css", "css",
                 undefined, "css", "html", "html", "html"]
         };
-        wa11y.each(testMaterial.expected, function (expected, index) {
+        _.each(testMaterial.expected, function (expected, index) {
             equal(wa11y.getSrcType(testMaterial.values[index]),
                 expected, "getSrcType result is correct");
         });
@@ -165,8 +166,8 @@
         }, ["1", "find", "123"],
             ["1", "123", "hohoho"]
         ], expected = ["b", undefined, 1, undefined];
-        wa11y.each(sources, function (source, index) {
-            equal(wa11y.find(source, criteria), expected[index],
+        _.each(sources, function (source, index) {
+            equal(_.find(source, criteria), expected[index],
                 "Find result is correct");
         });
     });
@@ -190,8 +191,8 @@
         }, ["1", "123"],
             ["1", "123", "hohoho"]
         ];
-        wa11y.each(sources, function (source, index) {
-            deepEqual(wa11y.remove(source, criteria), expected[index],
+        _.each(sources, function (source, index) {
+            deepEqual(_.remove(source, criteria), expected[index],
                 "Element should be removed if it was present");
         });
     });

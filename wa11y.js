@@ -15,80 +15,99 @@
     // A public map of registered rules.
     wa11y.rules = {};
 
-    // This is a simple utility to iterate over an object or an array.
-    // source - object or an array.
-    // callback - function to be called upon every element of source.
-    wa11y.each = function (source, callback) {
-        var i, key;
-        if (wa11y.isArray(source)) {
-            for (i = 0; i < source.length; ++i) {
-                callback(source[i], i);
-            }
-        } else {
-            for (key in source) {
-                callback(source[key], key);
-            }
-        }
-    };
-
-    // Lookup an element in an array or object based on some criteria.
-    // source - object or an array.
-    // callback - criteria function.
-    wa11y.find = function (source, callback) {
-        var i, val;
-        if (wa11y.isArray(source)) {
-            for (i = 0; i < source.length; ++i) {
-                val = callback(source[i], i);
-                if (val !== undefined) {
-                    return val;
+    var _ = wa11y.operators = {
+        // This is a simple utility to iterate over an object or an array.
+        // source - object or an array.
+        // callback - function to be called upon every element of source.
+        each: function (source, callback) {
+            var i, key;
+            if (_.isArray(source)) {
+                for (i = 0; i < source.length; ++i) {
+                    callback(source[i], i);
+                }
+            } else {
+                for (key in source) {
+                    callback(source[key], key);
                 }
             }
-        } else {
-            for (i in source) {
-                val = callback(source[i], i);
-                if (val !== undefined) {
-                    return val;
+        },
+        // Lookup an element in an array or object based on some criteria.
+        // source - object or an array.
+        // callback - criteria function.
+        find: function (source, callback) {
+            var i, val;
+            if (_.isArray(source)) {
+                for (i = 0; i < source.length; ++i) {
+                    val = callback(source[i], i);
+                    if (val !== undefined) {
+                        return val;
+                    }
+                }
+            } else {
+                for (i in source) {
+                    val = callback(source[i], i);
+                    if (val !== undefined) {
+                        return val;
+                    }
                 }
             }
-        }
-    };
-
-    // This is a utility to get the index of an element in the array.
-    // value - an element of the array to look for.
-    // source Array - an array to look in.
-    wa11y.indexOf = function (value, source) {
-        var i;
-        if (!wa11y.isArray(source)) {
+        },
+        // This is a utility to get the index of an element in the array.
+        // value - an element of the array to look for.
+        // source Array - an array to look in.
+        indexOf: function (value, source) {
+            var i;
+            if (!_.isArray(source)) {
+                return -1;
+            }
+            for (i = 0; i < source.length; ++i) {
+                if (source[i] === value) {
+                    return i;
+                }
+            }
             return -1;
-        }
-        for (i = 0; i < source.length; ++i) {
-            if (source[i] === value) {
-                return i;
-            }
-        }
-        return -1;
-    };
-
-    // Remove elements from an array or object based on some criteria.
-    // source - object or an array.
-    // callback - criteria.
-    wa11y.remove = function (source, callback) {
-        var i;
-        if (wa11y.isArray(source)) {
-            for (i = 0; i < source.length; ++i) {
-                if (callback(source[i], i)) {
-                    source.splice(i, 1);
-                    --i;
+        },
+        // Remove elements from an array or object based on some criteria.
+        // source - object or an array.
+        // callback - criteria.
+        remove: function (source, callback) {
+            var i;
+            if (_.isArray(source)) {
+                for (i = 0; i < source.length; ++i) {
+                    if (callback(source[i], i)) {
+                        source.splice(i, 1);
+                        --i;
+                    }
+                }
+            } else {
+                for (i in source) {
+                    if (callback(source[i], i)) {
+                        delete source[i];
+                    }
                 }
             }
-        } else {
-            for (i in source) {
-                if (callback(source[i], i)) {
-                    delete source[i];
+            return source;
+        },
+        // Utility primarily used to merge rule options.
+        merge: function (target) {
+            var i;
+            for (i = 1; i < arguments.length; ++i) {
+                var source = arguments[i];
+                if (source !== null && source !== undefined) {
+                    mergeImpl(target, source);
                 }
             }
+            return target;
+        },
+        // Test an input value for being an array.
+        isArray: function (obj) {
+            return Object.prototype.toString.call(obj) === "[object Array]";
+        },
+        // Test if the value is primitive (Function is considered primitive).
+        isPrimitive: function (value) {
+            var type = typeof value;
+            return !value || type === "string" || type === "boolean" || type === "number" || type === "function";
         }
-        return source;
     };
 
     var mergeImpl = function (target, source) {
@@ -98,8 +117,8 @@
                 thisSource = source[key];
             if (thisSource !== undefined) {
                 if (thisSource !== null && typeof thisSource === "object") {
-                    if (wa11y.isPrimitive(thisTarget)) {
-                        target[key] = thisTarget = wa11y.isArray(thisSource) ? [] : {};
+                    if (_.isPrimitive(thisTarget)) {
+                        target[key] = thisTarget = _.isArray(thisSource) ? [] : {};
                     }
                     mergeImpl(thisTarget, thisSource);
                 } else {
@@ -108,29 +127,6 @@
             }
         }
         return target;
-    };
-
-    // Utility primarily used to merge rule options.
-    wa11y.merge = function (target) {
-        var i;
-        for (i = 1; i < arguments.length; ++i) {
-            var source = arguments[i];
-            if (source !== null && source !== undefined) {
-                mergeImpl(target, source);
-            }
-        }
-        return target;
-    };
-
-    // Test an input value for being an array.
-    wa11y.isArray = function (obj) {
-        return Object.prototype.toString.call(obj) === "[object Array]";
-    };
-
-    // Test if the value is primitive (Function is considered primitive).
-    wa11y.isPrimitive = function (value) {
-        var type = typeof value;
-        return !value || type === "string" || type === "boolean" || type === "number" || type === "function";
     };
 
     // This is a wa11y's emitter constructor function.
@@ -160,7 +156,7 @@
             if (!listeners) {
                 return emitter;
             }
-            wa11y.each(listeners, function (listener) {
+            _.each(listeners, function (listener) {
                 listener.apply(emitter, args);
             });
             return emitter;
@@ -171,7 +167,7 @@
 
     // Wa11y's logger constructor function.
     wa11y.logger = function (options) {
-        options = wa11y.merge({
+        options = _.merge({
             severity: wa11y.options.severity
         }, options);
         var logger = {},
@@ -179,12 +175,12 @@
             // Full set of default severities.
             severities = ["INFO", "WARNING", "ERROR", "FATAL"];
 
-        severities = severities.slice(wa11y.indexOf(options.severity,
+        severities = severities.slice(_.indexOf(options.severity,
             severities));
 
         // Check if severity is below the threshold.
         logger.ignore = function (severity) {
-            return wa11y.indexOf(severity, severities) < 0;
+            return _.indexOf(severity, severities) < 0;
         };
 
         logger.log = function (report) {
@@ -196,7 +192,7 @@
             var callbackWithSeverity = function (report) {
                 // Filter all logs below set severity.
                 var filteredReport = {}, size = 0;
-                wa11y.each(report, function (message, severity) {
+                _.each(report, function (message, severity) {
                     if (logger.ignore(severity)) {
                         return;
                     }
@@ -233,7 +229,7 @@
     wa11y.test = function (rule, options) {
         var test = {
                 rule: rule,
-                options: wa11y.merge({
+                options: _.merge({
                     severity: wa11y.options.severity,
                     srcTypes: wa11y.options.srcTypes
                 }, options)
@@ -249,7 +245,7 @@
         // test.fail - trigger test fail.
         // test.onComplete - listen for test completion.
         // test.onFail - listen for test failure.
-        wa11y.each(["complete", "fail"], function (event) {
+        _.each(["complete", "fail"], function (event) {
             test[event] = function (report) {
                 emitter.emit(event, report);
                 return test;
@@ -285,7 +281,7 @@
             if (typeof srcTypes === "string") {
                 return srcType === srcTypes;
             }
-            return wa11y.indexOf(srcType, test.options.srcTypes) > -1;
+            return _.indexOf(srcType, test.options.srcTypes) > -1;
         };
 
         // Run the test.
@@ -322,7 +318,7 @@
 
     // Infer source type based on the source string content.
     wa11y.getSrcType = function (source) {
-        return wa11y.find(["html", "css"], function (type) {
+        return _.find(["html", "css"], function (type) {
             if (wa11y["is" + type.toUpperCase()](source)) {
                 return type;
             }
@@ -342,7 +338,7 @@
         };
 
         tester.run = function (sources) {
-            wa11y.each(sources, function (src) {
+            _.each(sources, function (src) {
                 var srcType = wa11y.getSrcTyp(src),
                     engine;
                 if (!srcType) {
@@ -351,7 +347,7 @@
                 }
                 engine = wa11y.engine[srcType]();
 
-                wa11y.each(["onComplete", "onFail"], function (listener) {
+                _.each(["onComplete", "onFail"], function (listener) {
                     test[listener](function (report) {
                         emitter.emit(name, report);
                     });
@@ -374,7 +370,7 @@
     // and also run tests.
     wa11y.init = function () {
         var tester = {
-                options: wa11y.merge({}, wa11y.options)
+                options: _.merge({}, wa11y.options)
             },
             inProgress = false,
             emitter = wa11y.emitter(),
@@ -390,15 +386,15 @@
 
         // Configure the test runner.
         tester.configure = function (config) {
-            tester.options = wa11y.merge(tester.options, config);
+            tester.options = _.merge(tester.options, config);
             if (!tester.options.rules) {
                 return tester;
             }
-            wa11y.each(tester.options.rules, function (ruleOptions, name) {
+            _.each(tester.options.rules, function (ruleOptions, name) {
                 var ruleObj = wa11y.rules[name],
                     testObj,
                     updateLog = function (report) {
-                        wa11y.each(report, function (message, severity) {
+                        _.each(report, function (message, severity) {
                             if (!log[name][severity]) {
                                 log[name][severity] = [];
                             }
@@ -411,7 +407,7 @@
                 }
 
                 testObj = {
-                    test: wa11y.test(ruleObj.rule, wa11y.merge({
+                    test: wa11y.test(ruleObj.rule, _.merge({
                         srcTypes: tester.options.srcTypes,
                         severity: tester.options.severity
                     }, ruleObj.options, ruleOptions)),
@@ -421,7 +417,7 @@
                 emitter.on(name, function (report) {
                     testObj.complete = true;
                     updateLog(report);
-                    if (wa11y.find(tests, function (testObj) {
+                    if (_.find(tests, function (testObj) {
                         if (!testObj.complete) {
                             return true;
                         }
@@ -434,7 +430,7 @@
 
                 testObj.test.onLog(updateLog);
 
-                wa11y.each(["onComplete", "onFail"], function (listener) {
+                _.each(["onComplete", "onFail"], function (listener) {
                     testObj.test[listener](function (report) {
                         emitter.emit(name, report);
                     });
@@ -447,7 +443,7 @@
 
         // Helper method that prepares wa11y instance for tests.
         var reset = function () {
-            wa11y.each(tests, function (testObj, name) {
+            _.each(tests, function (testObj, name) {
                 log[name] = {};
                 testObj.complete = false;
             });
@@ -470,7 +466,7 @@
                     emitter.emit("fail", "Error during document processing: " + err);
                     return;
                 }
-                wa11y.each(tests, function (testObj) {
+                _.each(tests, function (testObj) {
                     var test = testObj.test;
                     if (!test.supports(srcType)) {
                         return;
