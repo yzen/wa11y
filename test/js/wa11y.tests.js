@@ -216,6 +216,28 @@
         });
         emitter.emit.apply(null, ["test1"].concat(args));
     });
+    
+    test("wa11y.engine", function () {
+        QUnit.expect(6);
+        var engine = wa11y.engine();
+        engine.process("", function () {
+            ok("Listener is properly fired");
+        });
+        engine.process("I'm not a valid HTML", function (undefined, wrapper) {
+            var buttons = wrapper.find("button");
+            equal(0, buttons.length, "There are no buttons");
+        });
+        engine.process("<div class='my'>This div is ARIA friendly</div>", function (undefined, wrapper) {
+            var buttons = wrapper.find(".my");
+            equal(1, buttons.length, "I found a my div!");
+        });
+        engine.process("<div class='my'><span class='mytext'>Found</span><span class='mytext'>Me</span></div>", function (undefined, wrapper) {
+            var spans = wrapper.find(".mytext");
+            equal(2, spans.length, "Found mytext");
+            equal("Found Me", spans[0].innerHTML + " " + spans[1].innerHTML, "DOM properties work fine");
+            ok(spans[0].parentNode.classList[0], "Proper class was found as well");
+        });
+    });
 
     test("wa11y.logger", function () {
         expect(3);
