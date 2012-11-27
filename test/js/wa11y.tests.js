@@ -217,9 +217,9 @@
         emitter.emit.apply(null, ["test1"].concat(args));
     });
     
-    test("wa11y.engine", function () {
+    test("wa11y.engine.html", function () {
         QUnit.expect(6);
-        var engine = wa11y.engine();
+        var engine = wa11y.engine.html();
         engine.process("", function () {
             ok("Listener is properly fired");
         });
