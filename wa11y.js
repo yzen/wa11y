@@ -521,6 +521,9 @@
                         return engine(selector, doc);
                     },
                     findLineNumber: function (element) {
+                        if (!element || !Array.isArray(element) || element.length === 0) {
+                            return;
+                        }
                         var position = doc.documentElement.innerHTML.indexOf(element[0].outerHTML),
                             lineBreaks = this.lineBreaks,
                             i, length = lineBreaks.length;
