@@ -68,6 +68,7 @@
         rule: syncRuleRevert
     });
 
+/*
     test("wa11y.merge", function () {
         var testMaterial = {
             targets: [{}, {simple: "old"}, {simple: "old"}, {
@@ -216,10 +217,12 @@
         });
         emitter.emit.apply(null, ["test1"].concat(args));
     });
+*/
     
     test("wa11y.engine", function () {
         QUnit.expect(6);
         var engine = wa11y.engine();
+/*
         engine.process("", function () {
             ok("Listener is properly fired");
         });
@@ -237,8 +240,17 @@
             equal("Found Me", spans[0].innerHTML + " " + spans[1].innerHTML, "DOM properties work fine");
             ok(spans[0].parentNode.classList[0], "Proper class was found as well");
         });
+*/
+        engine.process("<div class='my1'>Line 1</div>\r\n<div class='my2'>Line 2</div>\r\n<div class='my3'>\r\nLine 3</div>", function (undefined, wrapper) {
+             var span2 = wrapper.find(".my2"),
+                 span3 = wrapper.find(".my3");
+             equal(4, wrapper.lineBreaks.length, "Found 4 lined of code");
+             equal(2, wrapper.findLineNumber(span2), "my2 span is located on the second line of code");
+             equal(3, wrapper.findLineNumber(span3), "my3 span is located on the third line of code");
+        });
     });
 
+/*
     test("wa11y.logger", function () {
         expect(3);
         var logger = wa11y.logger();
@@ -494,5 +506,6 @@
         validator1.run(simpleSource);
         validator2.run(emptySource);
     });
+*/
     
 })(QUnit);
