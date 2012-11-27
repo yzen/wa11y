@@ -15,13 +15,13 @@
     // A public map of registered rules.
     wa11y.rules = {};
 
-    var _ = wa11y.operators = {
+    var o = wa11y.operators = {
         // This is a simple utility to iterate over an object or an array.
         // source - object or an array.
         // callback - function to be called upon every element of source.
         each: function (source, callback) {
             var i, key;
-            if (_.isArray(source)) {
+            if (o.isArray(source)) {
                 for (i = 0; i < source.length; ++i) {
                     callback(source[i], i);
                 }
@@ -36,7 +36,7 @@
         // callback - criteria function.
         find: function (source, callback) {
             var i, val;
-            if (_.isArray(source)) {
+            if (o.isArray(source)) {
                 for (i = 0; i < source.length; ++i) {
                     val = callback(source[i], i);
                     if (val !== undefined) {
@@ -57,7 +57,7 @@
         // source Array - an array to look in.
         indexOf: function (value, source) {
             var i;
-            if (!_.isArray(source)) {
+            if (!o.isArray(source)) {
                 return -1;
             }
             for (i = 0; i < source.length; ++i) {
@@ -72,7 +72,7 @@
         // callback - criteria.
         remove: function (source, callback) {
             var i;
-            if (_.isArray(source)) {
+            if (o.isArray(source)) {
                 for (i = 0; i < source.length; ++i) {
                     if (callback(source[i], i)) {
                         source.splice(i, 1);
@@ -117,8 +117,8 @@
                 thisSource = source[key];
             if (thisSource !== undefined) {
                 if (thisSource !== null && typeof thisSource === "object") {
-                    if (_.isPrimitive(thisTarget)) {
-                        target[key] = thisTarget = _.isArray(thisSource) ? [] : {};
+                    if (o.isPrimitive(thisTarget)) {
+                        target[key] = thisTarget = o.isArray(thisSource) ? [] : {};
                     }
                     mergeImpl(thisTarget, thisSource);
                 } else {
@@ -156,7 +156,7 @@
             if (!listeners) {
                 return emitter;
             }
-            _.each(listeners, function (listener) {
+            o.each(listeners, function (listener) {
                 listener.apply(emitter, args);
             });
             return emitter;
@@ -167,7 +167,7 @@
 
     // Wa11y's logger constructor function.
     wa11y.logger = function (options) {
-        options = _.merge({
+        options = o.merge({
             severity: wa11y.options.severity
         }, options);
         var logger = {},
@@ -175,12 +175,12 @@
             // Full set of default severities.
             severities = ["INFO", "WARNING", "ERROR", "FATAL"];
 
-        severities = severities.slice(_.indexOf(options.severity,
+        severities = severities.slice(o.indexOf(options.severity,
             severities));
 
         // Check if severity is below the threshold.
         logger.ignore = function (severity) {
-            return _.indexOf(severity, severities) < 0;
+            return o.indexOf(severity, severities) < 0;
         };
 
         logger.log = function (report) {
@@ -192,7 +192,7 @@
             var callbackWithSeverity = function (report) {
                 // Filter all logs below set severity.
                 var filteredReport = {}, size = 0;
-                _.each(report, function (message, severity) {
+                o.each(report, function (message, severity) {
                     if (logger.ignore(severity)) {
                         return;
                     }
@@ -229,7 +229,7 @@
     wa11y.test = function (rule, options) {
         var test = {
                 rule: rule,
-                options: _.merge({
+                options: o.merge({
                     severity: wa11y.options.severity,
                     srcTypes: wa11y.options.srcTypes
                 }, options)
@@ -245,7 +245,7 @@
         // test.fail - trigger test fail.
         // test.onComplete - listen for test completion.
         // test.onFail - listen for test failure.
-        _.each(["complete", "fail"], function (event) {
+        o.each(["complete", "fail"], function (event) {
             test[event] = function (report) {
                 emitter.emit(event, report);
                 return test;
@@ -281,7 +281,7 @@
             if (typeof srcTypes === "string") {
                 return srcType === srcTypes;
             }
-            return _.indexOf(srcType, test.options.srcTypes) > -1;
+            return o.indexOf(srcType, test.options.srcTypes) > -1;
         };
 
         // Run the test.
@@ -318,7 +318,7 @@
 
     // Infer source type based on the source string content.
     wa11y.getSrcType = function (source) {
-        return _.find(["html", "css"], function (type) {
+        return o.find(["html", "css"], function (type) {
             if (wa11y["is" + type.toUpperCase()](source)) {
                 return type;
             }
@@ -338,7 +338,7 @@
         };
 
         tester.run = function (sources) {
-            _.each(sources, function (src) {
+            o.each(sources, function (src) {
                 var srcType = wa11y.getSrcTyp(src),
                     engine;
                 if (!srcType) {
@@ -347,7 +347,7 @@
                 }
                 engine = wa11y.engine[srcType]();
 
-                _.each(["onComplete", "onFail"], function (listener) {
+                o.each(["onComplete", "onFail"], function (listener) {
                     test[listener](function (report) {
                         emitter.emit(name, report);
                     });
@@ -370,7 +370,7 @@
     // and also run tests.
     wa11y.init = function () {
         var tester = {
-                options: _.merge({}, wa11y.options)
+                options: o.merge({}, wa11y.options)
             },
             inProgress = false,
             emitter = wa11y.emitter(),
@@ -386,15 +386,15 @@
 
         // Configure the test runner.
         tester.configure = function (config) {
-            tester.options = _.merge(tester.options, config);
+            tester.options = o.merge(tester.options, config);
             if (!tester.options.rules) {
                 return tester;
             }
-            _.each(tester.options.rules, function (ruleOptions, name) {
+            o.each(tester.options.rules, function (ruleOptions, name) {
                 var ruleObj = wa11y.rules[name],
                     testObj,
                     updateLog = function (report) {
-                        _.each(report, function (message, severity) {
+                        o.each(report, function (message, severity) {
                             if (!log[name][severity]) {
                                 log[name][severity] = [];
                             }
@@ -407,7 +407,7 @@
                 }
 
                 testObj = {
-                    test: wa11y.test(ruleObj.rule, _.merge({
+                    test: wa11y.test(ruleObj.rule, o.merge({
                         srcTypes: tester.options.srcTypes,
                         severity: tester.options.severity
                     }, ruleObj.options, ruleOptions)),
@@ -417,7 +417,7 @@
                 emitter.on(name, function (report) {
                     testObj.complete = true;
                     updateLog(report);
-                    if (_.find(tests, function (testObj) {
+                    if (o.find(tests, function (testObj) {
                         if (!testObj.complete) {
                             return true;
                         }
@@ -430,7 +430,7 @@
 
                 testObj.test.onLog(updateLog);
 
-                _.each(["onComplete", "onFail"], function (listener) {
+                o.each(["onComplete", "onFail"], function (listener) {
                     testObj.test[listener](function (report) {
                         emitter.emit(name, report);
                     });
@@ -443,7 +443,7 @@
 
         // Helper method that prepares wa11y instance for tests.
         var reset = function () {
-            _.each(tests, function (testObj, name) {
+            o.each(tests, function (testObj, name) {
                 log[name] = {};
                 testObj.complete = false;
             });
@@ -466,7 +466,7 @@
                     emitter.emit("fail", "Error during document processing: " + err);
                     return;
                 }
-                _.each(tests, function (testObj) {
+                o.each(tests, function (testObj) {
                     var test = testObj.test;
                     if (!test.supports(srcType)) {
                         return;
