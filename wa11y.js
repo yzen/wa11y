@@ -12,6 +12,15 @@
         window.wa11y = wa11y;
     }
 
+    // Used for dynamic id generation
+    var prefix = (Math.floor(Math.random() * 1e12)).toString(36) + "-",
+        id = 1;
+
+    // Generate unique id.
+    wa11y.id = function () {
+        return prefix + (id++);
+    };
+
     // A public map of registered rules.
     wa11y.rules = {};
 
@@ -169,31 +178,47 @@
         return emitter;
     };
 
+    var eventualize = function (component, onkWrapper) {
+        var events = component.options.events,
+            emitter = component.options.emitter || wa11y.emitter();
+        wa11y.each(events, function (event) {
+            component[event] = function () {
+                var args = Array.prototype.slice.apply(arguments);
+                emitter.emit.apply(null, [event].concat(args));
+                return component;
+            };
+        });
+        component.on = function (event, callback) {
+            callback = onkWrapper ? onkWrapper(event, callback) : callback;
+            if (wa11y.indexOf(event, events) < 0) {
+                return;
+            }
+            emitter.on(event, callback);
+            return component;
+        };
+        return component;
+    };
+
     // Wa11y's logger constructor function.
     wa11y.logger = function (options) {
-        options = wa11y.merge({
-            severity: wa11y.options.severity
-        }, options);
-        var logger = {},
-            emitter = options.emitter || wa11y.emitter(),
-            // Full set of default severities.
-            severities = ["INFO", "WARNING", "ERROR", "FATAL"];
+        var logger = {
+                options: wa11y.merge({
+                    severity: wa11y.options.severity,
+                    // Full set of default severities.
+                    severities: ["INFO", "WARNING", "ERROR", "FATAL"],
+                    events: ["log"]
+                }, options)
+            },
+            severities = logger.options.severities;
 
-        severities = severities.slice(wa11y.indexOf(options.severity,
+        severities = severities.slice(wa11y.indexOf(logger.options.severity,
             severities));
 
-        // Check if severity is below the threshold.
-        logger.ignore = function (severity) {
-            return wa11y.indexOf(severity, severities) < 0;
-        };
-
-        logger.log = function (report) {
-            emitter.emit("log", report);
-            return logger;
-        };
-
-        logger.onLog = function (callback) {
-            var callbackWithSeverity = function (report) {
+        eventualize(logger, function (event, callback) {
+            if (event !== "log") {
+                return callback;
+            }
+            return function (report) {
                 // Filter all logs below set severity.
                 var filteredReport = {}, size = 0;
                 wa11y.each(report, function (message, severity) {
@@ -207,9 +232,11 @@
                     callback(filteredReport);
                 }
             };
-            // Only apply callback if severity is appropriate.
-            emitter.on("log", callbackWithSeverity);
-            return logger;
+        });
+
+        // Check if severity is below the threshold.
+        logger.ignore = function (severity) {
+            return wa11y.indexOf(severity, severities) < 0;
         };
 
         return logger;
@@ -235,41 +262,25 @@
                 rule: rule,
                 options: wa11y.merge({
                     severity: wa11y.options.severity,
-                    srcTypes: wa11y.options.srcTypes
+                    srcTypes: wa11y.options.srcTypes,
+                    events: ["complete", "fail", "log"]
                 }, options)
             },
             // Private logger.
             logger = wa11y.logger({
                 severity: test.options.severity
-            }),
-            // Private test emitter.
-            emitter = wa11y.emitter();
+            });
 
-        // test.complete - trigger test complete.
-        // test.fail - trigger test fail.
-        // test.onComplete - listen for test completion.
-        // test.onFail - listen for test failure.
-        wa11y.each(["complete", "fail"], function (event) {
-            test[event] = function (report) {
-                emitter.emit(event, report);
-                return test;
-            };
-            test["on" + event.charAt(0).toUpperCase() + event.slice(1)] =
-                function (callback) {
-                    emitter.on(event, callback);
-                    return test;
-                };
+        eventualize(test, function (event, callback) {
+            if (event !== "log") {
+                return callback;
+            }
+            logger.on("log", callback);
         });
 
         // Log something during the test.
         test.log = function (report) {
             logger.log(report);
-            return test;
-        };
-
-        // Listen to log events.
-        test.onLog = function (callback) {
-            logger.onLog(callback);
             return test;
         };
 
@@ -289,15 +300,13 @@
         };
 
         // Run the test.
-        test.run = function (src, srcType, engine) {
+        test.run = function (src, options) {
             try {
-                test.rule.apply({
+                test.rule.apply(wa11y.merge({
                     complete: test.complete,
                     log: test.log,
-                    srcType: srcType,
-                    engine: engine,
                     options: test.options
-                }, [src]);
+                }, options), [src]);
             } catch (err) {
                 test.fail({
                     FATAL: "Error during rule evaluation: " +
@@ -331,39 +340,101 @@
 
     wa11y.tester = function (rule, options) {
         var tester = {
-                test: wa11y.test(rule, options)
-            },
-            emitter = wa11y.emitter();
+                options: wa11y.merge({
+                    events: ["complete", "fail"]
+                }, options)
+            };
 
-        // Wrapper around private tester emitter.
-        tester.on = function (type, callback) {
-            emitter.on(type, callback);
-            return tester;
-        };
+        eventualize(tester);
+
+        tester.test = wa11y.test(rule, tester.options.test.options);
 
         tester.run = function (sources) {
-            wa11y.each(sources, function (src) {
-                var srcType = wa11y.getSrcTyp(src),
-                    engine;
-                if (!srcType) {
-                    emitter.emit("fail", "Source not supported: " + src);
+            var emitter = wa11y.emitter(),
+                log = {},
+                completed = {},
+                updateLog = function (id, report) {
+                    wa11y.each(report, function (message, severity) {
+                        if (!log[id][severity]) {
+                            log[id][severity] = [];
+                        }
+                        log[id][severity].push(message);
+                    });
+                },
+                runTest = function (source) {
+                    tester.test.run.apply(undefined, [source.src, {
+                        srcType: source.srcType,
+                        engine: source.engine
+                    }]);
+                };
+
+            if (wa11y.isPrimitive(sources)) {
+                sources = [sources];
+            }
+
+            wa11y.each(sources, function (source, index) {
+                var engine;
+
+                if (typeof source === "string") {
+                    source = sources[index] = {
+                        id: wa11y.id(),
+                        src: source
+                    };
+                }
+
+                if (!source.id) {
+                    source.id = wa11y.id();
+                }
+
+                log[source.id] = {};
+
+                source.srcType = source.srcType || wa11y.getSrcType(source.src);
+
+                if (!source.srcType) {
+                    tester.fail("Source not supported: " + source);
                     return;
                 }
-                engine = wa11y.engine[srcType]();
 
-                wa11y.each(["onComplete", "onFail"], function (listener) {
-                    test[listener](function (report) {
-                        emitter.emit(name, report);
-                    });
-                });
-                engine.process(src, function (err, engine) {
-                    if (err) {
-                        emitter.emit("fail", "Error during document processing: " + err);
+                completed[source.id] = false;
+
+                emitter.on(source.id, function (report) {
+                    completed[source.id] = true;
+                    updateLog(source.id, report);
+                    if (wa11y.find(completed, function (thisCompleted) {
+                        if (!thisCompleted) {
+                            return true;
+                        }
+                    })) {
                         return;
                     }
-                    test.run.apply(undefined, [src, srcType, engine]);
+                    tester.complete(log);
+                });
+
+                wa11y.each(["complete", "fail"], function (event) {
+                    tester.test.on(event, function (report) {
+                        emitter.emit(source.id, report);
+                    });
+                });
+
+                tester.test.on("log", function (report) {
+                    updateLog(source.id, report);
+                });
+
+                if (source.engine || !wa11y.engine[source.srcType]) {
+                    runTest(source);
+                    return;
+                }
+
+                engine = wa11y.engine[source.srcType]();
+                engine.process(source.src, function (err, engine) {
+                    if (engine) {
+                        source.engine = engine;
+                    }
+                    runTest(source);
                 });
             });
+
+            return tester;
         };
 
         return tester;
@@ -373,115 +444,102 @@
     // After initialization user can add listeners to onComplete event
     // and also run tests.
     wa11y.init = function () {
-        var tester = {
-                options: wa11y.merge({}, wa11y.options)
+        var runner = {
+                options: wa11y.merge({
+                    events: ["fail", "complete"]
+                }, wa11y.options)
             },
+            completed = {},
             inProgress = false,
-            emitter = wa11y.emitter(),
-            tests = {},
-            engine = wa11y.engine(),
+            testers = {},
             log = {};
 
-        // Wrapper around private tester emitter.
-        tester.on = function (type, callback) {
-            emitter.on(type, callback);
-            return tester;
-        };
+        eventualize(runner);
 
         // Configure the test runner.
-        tester.configure = function (config) {
-            tester.options = wa11y.merge(tester.options, config);
-            if (!tester.options.rules) {
-                return tester;
+        runner.configure = function (config) {
+            var emitter = wa11y.emitter();
+
+            runner.options = wa11y.merge(runner.options, config);
+
+            if (!runner.options.rules) {
+                return runner;
             }
-            wa11y.each(tester.options.rules, function (ruleOptions, name) {
+
+            wa11y.each(runner.options.rules, function (ruleOptions, name) {
                 var ruleObj = wa11y.rules[name],
-                    testObj,
-                    updateLog = function (report) {
-                        wa11y.each(report, function (message, severity) {
-                            if (!log[name][severity]) {
-                                log[name][severity] = [];
-                            }
-                            log[name][severity].push(message);
-                        });
-                    };
+                    testerObjOpts,
+                    testerObj;
 
                 if (!ruleObj) {
                     return;
                 }
 
-                testObj = {
-                    test: wa11y.test(ruleObj.rule, wa11y.merge({
-                        srcTypes: tester.options.srcTypes,
-                        severity: tester.options.severity
-                    }, ruleObj.options, ruleOptions)),
+                testerObjOpts = wa11y.merge({
+                    srcTypes: runner.options.srcTypes,
+                    severity: runner.options.severity
+                }, ruleObj.options, ruleOptions);
+                testerObj = {
+                    tester: wa11y.tester(ruleObj.rule, {
+                        test: {
+                            options: testerObjOpts
+                        }
+                    }),
                     description: ruleObj.description
                 };
 
                 emitter.on(name, function (report) {
-                    testObj.complete = true;
-                    updateLog(report);
-                    if (wa11y.find(tests, function (testObj) {
-                        if (!testObj.complete) {
+                    completed[name] = true;
+                    log[name] = report;
+                    if (wa11y.find(completed, function (thisCompleted) {
+                        if (!thisCompleted) {
                             return true;
                         }
                     })) {
                         return;
                     }
                     inProgress = false;
-                    emitter.emit("complete", log);
+                    runner.complete(log);
                 });
 
-                testObj.test.onLog(updateLog);
-
-                wa11y.each(["onComplete", "onFail"], function (listener) {
-                    testObj.test[listener](function (report) {
+                wa11y.each(["complete", "fail"], function (event) {
+                    testerObj.tester.on(event, function (report) {
                         emitter.emit(name, report);
                     });
                 });
 
-                tests[name] = testObj;
+                testers[name] = testerObj;
             });
-            return tester;
+            return runner;
         };
 
         // Helper method that prepares wa11y instance for tests.
         var reset = function () {
-            wa11y.each(tests, function (testObj, name) {
+            wa11y.each(testers, function (testerObj, name) {
                 log[name] = {};
-                testObj.complete = false;
+                completed[name] = false;
             });
         };
 
         // Test configured rules.
-        tester.run = function (src, srcType) {
-            if (!src) {
-                emitter.emit("fail", "No source supplied.");
+        runner.run = function (sources) {
+            if (!sources) {
+                runner.fail("No source supplied.");
                 return;
             }
             if (inProgress) {
-                emitter.emit("cancel", "Tester is in progress. Cancelling...");
+                runner.fail("Tester is in progress. Cancelling...");
                 return;
             }
             inProgress = true;
             reset();
-            engine.process(src, function (err, engine) {
-                if (err) {
-                    emitter.emit("fail", "Error during document processing: " + err);
-                    return;
-                }
-                wa11y.each(tests, function (testObj) {
-                    var test = testObj.test;
-                    if (!test.supports(srcType)) {
-                        return;
-                    }
-                    test.run.apply(undefined, [src, srcType, engine]);
-                });
+            wa11y.each(testers, function (testerObj) {
+                testerObj.tester.run.apply(undefined, [sources]);
             });
-            return tester;
+            return runner;
         };
 
-        return tester;
+        return runner;
     };
 
     // Register a rule for testing.
@@ -508,8 +566,10 @@
         return wa11y;
     };
 
+    wa11y.engine = function () {};
+
     // Process source with wa11y selectors engine.
-    wa11y.engine = function () {
+    wa11y.engine.html = function () {
         var engine = {},
             readEngineSource = function (srcPath, callback) {
                 require("fs").readFile(require("path").resolve(__dirname, srcPath),

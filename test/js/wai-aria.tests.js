@@ -14,12 +14,14 @@
             }
         });
         testValidator.on("complete", function (log) {
-            var key, thisLog;
+            var key, docId, thisLog;
             for (key in log) {
-                thisLog = log[key];
-                deepEqual(thisLog, {
-                    message: ["wai-aria test passed."]
-                }, "Log is correct");
+                for (docId in log[key]) {
+                    thisLog = log[key][docId];
+                    deepEqual(thisLog, {
+                        message: ["wai-aria test passed."]
+                    }, "Log is correct");
+                }
             }
             start();
         });
