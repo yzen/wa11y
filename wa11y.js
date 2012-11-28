@@ -402,15 +402,17 @@
             if (wa11y.isPrimitive(sources)) {
                 sources = [sources];
             }
-            var progress = wa11y.progress(),
+            var progress = wa11y.progress()
+                    .emit("start", sources)
+                    .on("complete", function (log) {
+                        tester.emit("complete", log);
+                    }),
                 runTest = function (source) {
                     tester.test.run.apply(undefined, [source.src, {
                         srcType: source.srcType,
                         engine: source.engine
                     }]);
                 };
-
-            progress.emit("start", sources);
 
             wa11y.each(sources, function (source, index) {
                 var engine;
@@ -425,10 +427,6 @@
                     tester.emit("fail", "Source not supported: " + source);
                     return;
                 }
-
-                progress.on("complete", function (log) {
-                    tester.emit("complete", log);
-                });
 
                 wa11y.each(["complete", "fail"], function (event) {
                     tester.test.on(event, function (report) {
@@ -468,7 +466,10 @@
                 options: wa11y.merge({}, wa11y.options)
             },
             testers = {},
-            progress = wa11y.progress();
+            progress = wa11y.progress()
+                .on("complete", function (log) {
+                    runner.emit("complete", log);
+                });
 
         eventualize(runner);
 
@@ -500,10 +501,6 @@
                     }),
                     description: ruleObj.description
                 };
-
-                progress.on("complete", function (log) {
-                    runner.emit("complete", log);
-                });
 
                 wa11y.each(["complete", "fail"], function (event) {
                     testerObj.tester.on(event, function (report) {
