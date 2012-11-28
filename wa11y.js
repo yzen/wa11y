@@ -12,15 +12,6 @@
         window.wa11y = wa11y;
     }
 
-    // Used for dynamic id generation
-    var prefix = (Math.floor(Math.random() * 1e12)).toString(36) + "-",
-        id = 1;
-
-    // Generate unique id.
-    wa11y.id = function () {
-        return prefix + (id++);
-    };
-
     // A public map of registered rules.
     wa11y.rules = {};
 
@@ -353,6 +344,51 @@
         });
     };
 
+    wa11y.progress = function (steps) {
+        var progress = {
+                log: {}
+            },
+            inProgress = false,
+            completed = {},
+            updateLog = function (key, report) {
+                wa11y.each(report, function (message, severity) {
+                    var keyLog = progress.log[key];
+                    if (!keyLog[severity]) {
+                        keyLog[severity] = [];
+                    }
+                    keyLog[severity].push(message);
+                });
+            };
+
+        eventualize(progress);
+
+        wa11y.each(steps, function (step, key) {
+            progress.on(key, function (report) {
+                completed[key] = true;
+
+                updateLog(key, report);
+
+                if (wa11y.find(completed, function (compl) {
+                    if (!compl) {return true;}
+                })) {return;}
+                inProgress = false;
+                progress.emit("complete", progress.log);
+            });
+        });
+
+        progress.on("log", updateLog);
+
+        progress.on("start", function () {
+            inProgress = true;
+            wa11y.each(steps, function (step, key) {
+                progress.log[key] = {};
+                completed[key] = false;
+            });
+        });
+
+        return progress;
+    };
+
     wa11y.tester = function (rule, options) {
         var tester = {
             options: wa11y.merge({}, options)
@@ -363,17 +399,11 @@
         tester.test = wa11y.test(rule, tester.options.test.options);
 
         tester.run = function (sources) {
-            var emitter = wa11y.emitter(),
-                log = {},
-                completed = {},
-                updateLog = function (id, report) {
-                    wa11y.each(report, function (message, severity) {
-                        if (!log[id][severity]) {
-                            log[id][severity] = [];
-                        }
-                        log[id][severity].push(message);
-                    });
-                },
+            // TODO: This should be out of this component.
+            if (wa11y.isPrimitive(sources)) {
+                sources = [sources];
+            }
+            var progress = wa11y.progress(sources),
                 runTest = function (source) {
                     tester.test.run.apply(undefined, [source.src, {
                         srcType: source.srcType,
@@ -381,56 +411,34 @@
                     }]);
                 };
 
-            if (wa11y.isPrimitive(sources)) {
-                sources = [sources];
-            }
+            progress.emit("start");
 
             wa11y.each(sources, function (source, index) {
                 var engine;
 
                 if (typeof source === "string") {
                     source = sources[index] = {
-                        id: wa11y.id(),
                         src: source
                     };
                 }
-
-                if (!source.id) {
-                    source.id = wa11y.id();
-                }
-
-                log[source.id] = {};
-
                 source.srcType = source.srcType || wa11y.getSrcType(source.src);
-
                 if (!source.srcType) {
                     tester.emit("fail", "Source not supported: " + source);
                     return;
                 }
 
-                completed[source.id] = false;
-
-                emitter.on(source.id, function (report) {
-                    completed[source.id] = true;
-                    updateLog(source.id, report);
-                    if (wa11y.find(completed, function (thisCompleted) {
-                        if (!thisCompleted) {
-                            return true;
-                        }
-                    })) {
-                        return;
-                    }
+                progress.on("complete", function (log) {
                     tester.emit("complete", log);
                 });
 
                 wa11y.each(["complete", "fail"], function (event) {
                     tester.test.on(event, function (report) {
-                        emitter.emit(source.id, report);
+                        progress.emit(index, report);
                     });
                 });
 
                 tester.test.on("log", function (report) {
-                    updateLog(source.id, report);
+                    progress.emit("log", index, report);
                 });
 
                 if (source.engine || !wa11y.engine[source.srcType]) {
