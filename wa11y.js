@@ -344,11 +344,11 @@
         });
     };
 
-    wa11y.progress = function (steps) {
+    wa11y.progress = function () {
         var progress = {
                 log: {}
             },
-            inProgress = false,
+            busy = false,
             completed = {},
             updateLog = function (key, report) {
                 wa11y.each(report, function (message, severity) {
@@ -362,27 +362,26 @@
 
         eventualize(progress);
 
-        wa11y.each(steps, function (step, key) {
-            progress.on(key, function (report) {
-                completed[key] = true;
-
-                updateLog(key, report);
-
-                if (wa11y.find(completed, function (compl) {
-                    if (!compl) {return true;}
-                })) {return;}
-                inProgress = false;
-                progress.emit("complete", progress.log);
-            });
-        });
-
         progress.on("log", updateLog);
 
-        progress.on("start", function () {
-            inProgress = true;
+        progress.isBusy = function () {
+            return busy;
+        };
+
+        progress.on("start", function (steps) {
+            busy = true;
             wa11y.each(steps, function (step, key) {
                 progress.log[key] = {};
                 completed[key] = false;
+                progress.on(key, function (report) {
+                    completed[key] = true;
+                    updateLog(key, report);
+                    if (wa11y.find(completed, function (compl) {
+                        if (!compl) {return true;}
+                    })) {return;}
+                    busy = false;
+                    progress.emit("complete", progress.log);
+                });
             });
         });
 
@@ -403,7 +402,7 @@
             if (wa11y.isPrimitive(sources)) {
                 sources = [sources];
             }
-            var progress = wa11y.progress(sources),
+            var progress = wa11y.progress(),
                 runTest = function (source) {
                     tester.test.run.apply(undefined, [source.src, {
                         srcType: source.srcType,
@@ -411,7 +410,7 @@
                     }]);
                 };
 
-            progress.emit("start");
+            progress.emit("start", sources);
 
             wa11y.each(sources, function (source, index) {
                 var engine;
@@ -468,23 +467,17 @@
         var runner = {
                 options: wa11y.merge({}, wa11y.options)
             },
-            completed = {},
-            inProgress = false,
             testers = {},
-            log = {};
+            progress = wa11y.progress();
 
         eventualize(runner);
 
         // Configure the test runner.
         runner.configure = function (config) {
-            var emitter = wa11y.emitter();
-
             runner.options = wa11y.merge(runner.options, config);
-
             if (!runner.options.rules) {
                 return runner;
             }
-
             wa11y.each(runner.options.rules, function (ruleOptions, name) {
                 var ruleObj = wa11y.rules[name],
                     testerObjOpts,
@@ -498,6 +491,7 @@
                     srcTypes: runner.options.srcTypes,
                     severity: runner.options.severity
                 }, ruleObj.options, ruleOptions);
+
                 testerObj = {
                     tester: wa11y.tester(ruleObj.rule, {
                         test: {
@@ -507,23 +501,13 @@
                     description: ruleObj.description
                 };
 
-                emitter.on(name, function (report) {
-                    completed[name] = true;
-                    log[name] = report;
-                    if (wa11y.find(completed, function (thisCompleted) {
-                        if (!thisCompleted) {
-                            return true;
-                        }
-                    })) {
-                        return;
-                    }
-                    inProgress = false;
+                progress.on("complete", function (log) {
                     runner.emit("complete", log);
                 });
 
                 wa11y.each(["complete", "fail"], function (event) {
                     testerObj.tester.on(event, function (report) {
-                        emitter.emit(name, report);
+                        progress.emit(name, report);
                     });
                 });
 
@@ -532,26 +516,17 @@
             return runner;
         };
 
-        // Helper method that prepares wa11y instance for tests.
-        var reset = function () {
-            wa11y.each(testers, function (testerObj, name) {
-                log[name] = {};
-                completed[name] = false;
-            });
-        };
-
         // Test configured rules.
         runner.run = function (sources) {
             if (!sources) {
                 runner.emit("fail", "No source supplied.");
                 return;
             }
-            if (inProgress) {
+            if (progress.isBusy()) {
                 runner.emit("fail", "Tester is in progress. Cancelling...");
                 return;
             }
-            inProgress = true;
-            reset();
+            progress.emit("start", testers);
             wa11y.each(testers, function (testerObj) {
                 testerObj.tester.run.apply(undefined, [sources]);
             });
