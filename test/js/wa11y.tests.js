@@ -245,13 +245,13 @@
         logger.on("log", function (report) {
             deepEqual(report, {INFO: "test"}, "Correct log report");
         });
-        logger.log({INFO: "test"});
+        logger.emit("log", {INFO: "test"});
 
         logger = wa11y.logger();
         logger.on("log", function (report) {
             deepEqual(report, {ERROR: "test"}, "Correct log report");
         });
-        logger.log({ERROR: "test"});
+        logger.emit("log", {ERROR: "test"});
 
         logger = wa11y.logger({
             severity: "ERROR"
@@ -260,7 +260,7 @@
             // This should not fire
             deepEqual(report, {WARNING: "test"}, "Correct log report");
         });
-        logger.log({WARNING: "test"});
+        logger.emit("log", {WARNING: "test"});
 
         logger = wa11y.logger({
             severity: "ERROR"
@@ -268,7 +268,7 @@
         logger.on("log", function (report) {
             deepEqual(report, {FATAL: "test FATAL"}, "Correct log report");
         });
-        logger.log({FATAL: "test FATAL"});
+        logger.emit("log", {FATAL: "test FATAL"});
     });
 
     test("wa11y.test complete pass", function () {

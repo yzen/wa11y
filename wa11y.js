@@ -178,25 +178,24 @@
         return emitter;
     };
 
-    var eventualize = function (component, onkWrapper) {
-        var events = component.options.events,
-            emitter = component.options.emitter || wa11y.emitter();
-        wa11y.each(events, function (event) {
-            component[event] = function () {
-                var args = Array.prototype.slice.apply(arguments);
-                emitter.emit.apply(null, [event].concat(args));
-                return component;
-            };
-        });
+    var eventualize = function (component) {
+        var emitter = wa11y.emitter();
+
+        component.emit = function (event) {
+            emitter.emit.apply(undefined, Array.prototype.slice.apply(arguments));
+            return component;
+        };
+
         component.on = function (event, callback) {
-            callback = onkWrapper ? onkWrapper(event, callback) : callback;
-            if (wa11y.indexOf(event, events) < 0) {
-                return;
-            }
             emitter.on(event, callback);
             return component;
         };
+
         return component;
+    };
+
+    var wrap = function (callback, wrapper) {
+        return wrapper(callback);
     };
 
     // Wa11y's logger constructor function.
@@ -205,32 +204,38 @@
                 options: wa11y.merge({
                     severity: wa11y.options.severity,
                     // Full set of default severities.
-                    severities: ["INFO", "WARNING", "ERROR", "FATAL"],
-                    events: ["log"]
+                    severities: ["INFO", "WARNING", "ERROR", "FATAL"]
                 }, options)
             },
-            severities = logger.options.severities;
+            severities = logger.options.severities,
+            defaultOn;
 
         severities = severities.slice(wa11y.indexOf(logger.options.severity,
             severities));
 
-        eventualize(logger, function (event, callback) {
-            if (event !== "log") {
-                return callback;
-            }
-            return function (report) {
-                // Filter all logs below set severity.
-                var filteredReport = {}, size = 0;
-                wa11y.each(report, function (message, severity) {
-                    if (logger.ignore(severity)) {
-                        return;
-                    }
-                    filteredReport[severity] = message;
-                    ++size;
-                });
-                if (size > 0) {
-                    callback(filteredReport);
+        eventualize(logger);
+
+        logger.on = wrap(logger.on, function (defaultOn) {
+            return function (event, callback) {
+                if (event !== "log") {
+                    defaultOn(event, callback);
+                    return logger;
                 }
+                defaultOn(event, function (report) {
+                    // Filter all logs below set severity.
+                    var filteredReport = {}, size = 0;
+                    wa11y.each(report, function (message, severity) {
+                        if (logger.ignore(severity)) {
+                            return;
+                        }
+                        filteredReport[severity] = message;
+                        ++size;
+                    });
+                    if (size > 0) {
+                        callback(filteredReport);
+                    }
+                });
+                return logger;
             };
         });
 
@@ -262,8 +267,7 @@
                 rule: rule,
                 options: wa11y.merge({
                     severity: wa11y.options.severity,
-                    srcTypes: wa11y.options.srcTypes,
-                    events: ["complete", "fail", "log"]
+                    srcTypes: wa11y.options.srcTypes
                 }, options)
             },
             // Private logger.
@@ -271,16 +275,27 @@
                 severity: test.options.severity
             });
 
-        eventualize(test, function (event, callback) {
-            if (event !== "log") {
-                return callback;
-            }
-            logger.on("log", callback);
+        eventualize(test);
+
+        test.on = wrap(test.on, function (defaultOn) {
+            return function (event, callback) {
+                if (event !== "log") {
+                    defaultOn(event, callback);
+                    return test;
+                }
+                logger.on("log", callback);
+                return test;
+            };
         });
 
         // Log something during the test.
         test.log = function (report) {
-            logger.log(report);
+            logger.emit("log", report);
+            return test;
+        };
+
+        test.complete = function () {
+            test.emit.apply(undefined, ["complete"].concat(Array.prototype.slice.apply(arguments)));
             return test;
         };
 
@@ -308,7 +323,7 @@
                     options: test.options
                 }, options), [src]);
             } catch (err) {
-                test.fail({
+                test.emit("fail", {
                     FATAL: "Error during rule evaluation: " +
                         (err.message || err)
                 });
@@ -340,10 +355,8 @@
 
     wa11y.tester = function (rule, options) {
         var tester = {
-                options: wa11y.merge({
-                    events: ["complete", "fail"]
-                }, options)
-            };
+            options: wa11y.merge({}, options)
+        };
 
         eventualize(tester);
 
@@ -391,7 +404,7 @@
                 source.srcType = source.srcType || wa11y.getSrcType(source.src);
 
                 if (!source.srcType) {
-                    tester.fail("Source not supported: " + source);
+                    tester.emit("fail", "Source not supported: " + source);
                     return;
                 }
 
@@ -407,7 +420,7 @@
                     })) {
                         return;
                     }
-                    tester.complete(log);
+                    tester.emit("complete", log);
                 });
 
                 wa11y.each(["complete", "fail"], function (event) {
@@ -445,9 +458,7 @@
     // and also run tests.
     wa11y.init = function () {
         var runner = {
-                options: wa11y.merge({
-                    events: ["fail", "complete"]
-                }, wa11y.options)
+                options: wa11y.merge({}, wa11y.options)
             },
             completed = {},
             inProgress = false,
@@ -499,7 +510,7 @@
                         return;
                     }
                     inProgress = false;
-                    runner.complete(log);
+                    runner.emit("complete", log);
                 });
 
                 wa11y.each(["complete", "fail"], function (event) {
@@ -524,11 +535,11 @@
         // Test configured rules.
         runner.run = function (sources) {
             if (!sources) {
-                runner.fail("No source supplied.");
+                runner.emit("fail", "No source supplied.");
                 return;
             }
             if (inProgress) {
-                runner.fail("Tester is in progress. Cancelling...");
+                runner.emit("fail", "Tester is in progress. Cancelling...");
                 return;
             }
             inProgress = true;
