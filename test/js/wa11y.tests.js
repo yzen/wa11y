@@ -217,18 +217,18 @@
         emitter.emit.apply(null, ["test1"].concat(args));
     });
 
-    asyncTest("wally.engine listener check", function () {
+    asyncTest("wally.engine.html listener check", function () {
         QUnit.expect(1);
-        var engine = wa11y.engine();
+        var engine = wa11y.engine.html();
         engine.process("", function () {
             ok("Listener is properly fired");
             start();
         });
     });
     
-    asyncTest("wally.engine parsing non-valid HTML", function () {
+    asyncTest("wally.engine.html parsing non-valid HTML", function () {
         QUnit.expect(1);
-        var engine = wa11y.engine();
+        var engine = wa11y.engine.html();
         engine.process("I'm not a valid HTML", function (err, wrapper) {
             if (wa11y.isNode) {
                 ok(err, "We cannot parse non-HTML valid entities in Node");
@@ -240,9 +240,9 @@
         });
     });
     
-    asyncTest("wally.engine parsing valid HTML", function () {
+    asyncTest("wally.engine.html parsing valid HTML", function () {
         QUnit.expect(1);
-        var engine = wa11y.engine();
+        var engine = wa11y.engine.html();
         engine.process("<div class='my'>This div is ARIA friendly</div>", function (err, wrapper) {
             var buttons = wrapper.find(".my");
             equal(1, buttons.length, "I found a my div!");
@@ -250,9 +250,9 @@
         });
     });
 
-    asyncTest("wally.engine more DOM functionality", function () {
+    asyncTest("wally.engine.html more DOM functionality", function () {
         QUnit.expect(3);
-        var engine = wa11y.engine();
+        var engine = wa11y.engine.html();
         engine.process("<div class='my'><span class='mytext'>Found</span><span class='mytext'>Me</span></div>", function (err, wrapper) {
             var spans = wrapper.find(".mytext");
             equal(2, spans.length, "Found mytext");
@@ -265,51 +265,51 @@
     test("wa11y.logger", function () {
         expect(3);
         var logger = wa11y.logger();
-        logger.onLog(function (report) {
+        logger.on("log", function (report) {
             deepEqual(report, {INFO: "test"}, "Correct log report");
         });
-        logger.log({INFO: "test"});
+        logger.emit("log", {INFO: "test"});
 
         logger = wa11y.logger();
-        logger.onLog(function (report) {
+        logger.on("log", function (report) {
             deepEqual(report, {ERROR: "test"}, "Correct log report");
         });
-        logger.log({ERROR: "test"});
+        logger.emit("log", {ERROR: "test"});
 
         logger = wa11y.logger({
             severity: "ERROR"
         });
-        logger.onLog(function (report) {
+        logger.on("log", function (report) {
             // This should not fire
             deepEqual(report, {WARNING: "test"}, "Correct log report");
         });
-        logger.log({WARNING: "test"});
+        logger.emit("log", {WARNING: "test"});
 
         logger = wa11y.logger({
             severity: "ERROR"
         });
-        logger.onLog(function (report) {
+        logger.on("log", function (report) {
             deepEqual(report, {FATAL: "test FATAL"}, "Correct log report");
         });
-        logger.log({FATAL: "test FATAL"});
+        logger.emit("log", {FATAL: "test FATAL"});
     });
 
     test("wa11y.test complete pass", function () {
         QUnit.expect(1);
         var test = wa11y.test(syncRule);
-        test.onComplete(function (report) {
+        test.on("complete", function (report) {
             deepEqual(report, passReport, "Correct pass report");
         });
         test.run("I am a correct source");
     });
 
-    test("wa11y.test FATAL", function () {
+    test("wa11y.test fail", function () {
         QUnit.expect(1);
         var test = wa11y.test(failRule);
-        test.onComplete(function (report) {
+        test.on("complete", function (report) {
             ok("This should never be called");
         });
-        test.onFail(function (report) {
+        test.on("fail", function (report) {
             equal(report.FATAL.indexOf("Error during rule evaluation: "), 0,
                 "Correct FATAL report");
         });
@@ -319,7 +319,7 @@
     test("wa11y.test complete fail", function () {
         QUnit.expect(1);
         var test = wa11y.test(syncRule);
-        test.onComplete(function (report) {
+        test.on("complete", function (report) {
             deepEqual(report, failReport, "Correct fail report");
         });
         test.run("");
@@ -344,7 +344,7 @@
     asyncTest("wa11y.test with async rule - pass", function () {
         QUnit.expect(1);
         var test = wa11y.test(asyncRule);
-        test.onComplete(function (report) {
+        test.on("complete", function (report) {
             deepEqual(report, passReport, "Correct pass report");
             start();
         });
@@ -354,7 +354,7 @@
     asyncTest("wa11y.test with async rule - fail", function () {
         QUnit.expect(1);
         var test = wa11y.test(asyncRule);
-        test.onComplete(function (report) {
+        test.on("complete", function (report) {
             deepEqual(report, failReport, "Correct fail report");
             start();
         });
@@ -366,7 +366,7 @@
         var test = wa11y.test(syncRuleOptions, {
             someOption: "rule option"
         });
-        test.onComplete(function (report) {
+        test.on("complete", function (report) {
             deepEqual(report, passReport, "Correct pass report");
         });
         test.run("I am a correct source");
@@ -382,10 +382,12 @@
             }
         });
         testValidator.on("complete", function (log) {
-            var key, thisLog;
+            var key, docId, thisLog;
             for (key in log) {
-                thisLog = log[key];
-                deepEqual(thisLog, expectedPassReport, "Log is correct");
+                for (docId in log[key]) {
+                    thisLog = log[key][docId];
+                    deepEqual(thisLog, expectedPassReport, "Log is correct");
+                }
             }
             start();
         });
@@ -401,10 +403,12 @@
             }
         });
         testValidator.on("complete", function (log) {
-            var key, thisLog;
+            var key, docId, thisLog;
             for (key in log) {
-                thisLog = log[key];
-                deepEqual(thisLog, expectedPassReport, "Log is correct");
+                for (docId in log[key]) {
+                    thisLog = log[key][docId];
+                    deepEqual(thisLog, expectedPassReport, "Log is correct");
+                }
             }
             start();
         });
@@ -422,10 +426,12 @@
             }
         });
         testValidator.on("complete", function (log) {
-            var key, thisLog;
+            var key, docId, thisLog;
             for (key in log) {
-                thisLog = log[key];
-                deepEqual(thisLog, expectedPassReport, "Log is correct");
+                for (docId in log[key]) {
+                    thisLog = log[key][docId];
+                    deepEqual(thisLog, expectedPassReport, "Log is correct");
+                }
             }
             start();
         });
@@ -442,10 +448,12 @@
                 }
             })
             .on("complete", function (log) {
-                var key, thisLog;
+                var key, docId, thisLog;
                 for (key in log) {
-                    thisLog = log[key];
-                    deepEqual(thisLog, expectedPassReport, "Log is correct");
+                    for (docId in log[key]) {
+                        thisLog = log[key][docId];
+                        deepEqual(thisLog, expectedPassReport, "Log is correct");
+                    }
                 }
                 start();
             })
@@ -463,14 +471,16 @@
                     }
                 })
                 .on("complete", function (log) {
-                    var key, thisLog;
+                    var key, docId, thisLog;
                     for (key in log) {
-                        thisLog = log[key];
-                        deepEqual(thisLog, expectedPassReport, "Log is correct");
+                        for (docId in log[key]) {
+                            thisLog = log[key][docId];
+                            deepEqual(thisLog, expectedPassReport, "Log is correct");
+                        }
                     }
                     start();
                 })
-                .on("cancel", function (report) {
+                .on("fail", function (report) {
                     equal(report, "Tester is in progress. Cancelling...",
                         "Cancel event report is correct");
                 })
@@ -490,10 +500,12 @@
                 }
             })
             .on("complete", function (log) {
-                var key, thisLog;
+                var key, docId, thisLog;
                 for (key in log) {
-                    thisLog = log[key];
-                    deepEqual(thisLog, expectedPassReport, "Log is correct");
+                    for (docId in log[key]) {
+                        thisLog = log[key][docId];
+                        deepEqual(thisLog, expectedPassReport, "Log is correct");
+                    }
                 }
                 ++i;
                 if (i > 1) {
