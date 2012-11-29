@@ -217,15 +217,16 @@
         emitter.emit.apply(null, ["test1"].concat(args));
     });
 
-    test("wally.engine listener check", function () {
+    asyncTest("wally.engine listener check", function () {
         QUnit.expect(1);
         var engine = wa11y.engine();
         engine.process("", function () {
             ok("Listener is properly fired");
+            start();
         });
     });
     
-    test("wally.engine parsing non-valid HTML", function () {
+    asyncTest("wally.engine parsing non-valid HTML", function () {
         QUnit.expect(1);
         var engine = wa11y.engine();
         engine.process("I'm not a valid HTML", function (err, wrapper) {
@@ -235,19 +236,21 @@
                 var buttons = wrapper.find("button");
                 equal(0, buttons.length, "There are no buttons");
             }
+            start();
         });
     });
     
-    test("wally.engine parsing valid HTML", function () {
+    asyncTest("wally.engine parsing valid HTML", function () {
         QUnit.expect(1);
         var engine = wa11y.engine();
         engine.process("<div class='my'>This div is ARIA friendly</div>", function (err, wrapper) {
             var buttons = wrapper.find(".my");
             equal(1, buttons.length, "I found a my div!");
+            start();
         });
     });
 
-    test("wally.engine more DOM functionality", function () {
+    asyncTest("wally.engine more DOM functionality", function () {
         QUnit.expect(3);
         var engine = wa11y.engine();
         engine.process("<div class='my'><span class='mytext'>Found</span><span class='mytext'>Me</span></div>", function (err, wrapper) {
@@ -255,6 +258,7 @@
             equal(2, spans.length, "Found mytext");
             equal("Found Me", spans[0].innerHTML + " " + spans[1].innerHTML, "DOM properties work fine");
             equal("my", spans[0].parentNode.className, "Proper class was found as well");
+            start();
         });
     });
 
