@@ -229,7 +229,7 @@
         QUnit.expect(1);
         var engine = wa11y.engine();
         engine.process("I'm not a valid HTML", function (err, wrapper) {
-            if (typeof module !== "undefined" && module.exports) {
+            if (wa11y.isNode) {
                 ok(err, "We cannot parse non-HTML valid entities in Node");
             } else {
                 var buttons = wrapper.find("button");
