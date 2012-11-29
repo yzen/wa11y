@@ -1,7 +1,7 @@
 /* global QUnit, ok, test, wa11y */
 (function (QUnit) {
 
-    "use strict;"
+    "use strict";
 
     QUnit.module("wa11y");
 
@@ -21,7 +21,7 @@
         },
         syncRule = function (src) {
             if (src.length > 0) {
-                this.complete(passReport)
+                this.complete(passReport);
             } else {
                 this.complete(failReport);
             }
@@ -37,14 +37,14 @@
         },
         syncRuleOptions = function (src) {
             if (this.options && this.options.someOption) {
-                this.complete(passReport)
+                this.complete(passReport);
             } else {
                 this.complete(failReport);
             }
         },
         syncRuleRevert = function (src) {
             if (src.length < 1) {
-                this.complete(failReport)
+                this.complete(failReport);
             } else {
                 this.complete(passReport);
             }
@@ -217,12 +217,17 @@
         emitter.emit.apply(null, ["test1"].concat(args));
     });
 
-    asyncTest("wa11y.engine", function () {
-        QUnit.expect(6);
+    test("wally.engine listener check", function () {
+        QUnit.expect(1);
         var engine = wa11y.engine();
         engine.process("", function () {
             ok("Listener is properly fired");
         });
+    });
+    
+    test("wally.engine parsing non-valid HTML", function () {
+        QUnit.expect(1);
+        var engine = wa11y.engine();
         engine.process("I'm not a valid HTML", function (err, wrapper) {
             if (typeof module !== "undefined" && module.exports) {
                 ok(err, "We cannot parse non-HTML valid entities in Node");
@@ -231,10 +236,20 @@
                 equal(0, buttons.length, "There are no buttons");
             }
         });
+    });
+    
+    test("wally.engine parsing valid HTML", function () {
+        QUnit.expect(1);
+        var engine = wa11y.engine();
         engine.process("<div class='my'>This div is ARIA friendly</div>", function (err, wrapper) {
             var buttons = wrapper.find(".my");
             equal(1, buttons.length, "I found a my div!");
         });
+    });
+
+    test("wally.engine more DOM functionality", function () {
+        QUnit.expect(3);
+        var engine = wa11y.engine();
         engine.process("<div class='my'><span class='mytext'>Found</span><span class='mytext'>Me</span></div>", function (err, wrapper) {
             var spans = wrapper.find(".mytext");
             equal(2, spans.length, "Found mytext");
