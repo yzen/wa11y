@@ -189,30 +189,40 @@
         return wrapper(callback);
     };
 
+    var mergeOptions = function (component) {
+        var targets = Array.prototype.slice.apply(arguments).slice(1);
+        component.options = component.options || {};
+        wa11y.merge.apply(undefined, [component.options].concat(targets));
+        return component;
+    };
+
     // Wa11y's logger constructor function.
     wa11y.logger = function (options) {
-        var logger = {
-                options: wa11y.merge({
-                    severity: wa11y.options.severity,
-                    // Full set of default severities.
-                    severities: ["INFO", "WARNING", "ERROR", "FATAL"]
-                }, options)
-            },
-            severities = logger.options.severities,
+        var logger = {},
+            severities,
             defaultOn;
 
-        severities = severities.slice(wa11y.indexOf(logger.options.severity,
-            severities));
+        mergeOptions(logger, {
+            severity: wa11y.options.severity,
+            // Full set of default severities.
+            severities: ["INFO", "WARNING", "ERROR", "FATAL"]
+        }, options);
+
+        severities = logger.options.severities;
+        severities = severities.slice(
+            wa11y.indexOf(logger.options.severity, severities)
+        );
 
         eventualize(logger);
 
         logger.on = wrap(logger.on, function (defaultOn) {
             return function (event, callback) {
+                var applyIfNotEmpty;
                 if (event !== "log") {
                     defaultOn(event, callback);
                     return logger;
                 }
-                defaultOn(event, function (report) {
+                applyIfNotEmpty = function (report) {
                     // Filter all logs below set severity.
                     var filteredReport = {}, size = 0;
                     wa11y.each(report, function (message, severity) {
@@ -225,7 +235,8 @@
                     if (size > 0) {
                         callback(filteredReport);
                     }
-                });
+                };
+                defaultOn(event, applyIfNotEmpty);
                 return logger;
             };
         });
@@ -255,16 +266,19 @@
     // signature has 1 arguments - src - the actual source document.
     wa11y.test = function (rule, options) {
         var test = {
-                rule: rule,
-                options: wa11y.merge({
-                    severity: wa11y.options.severity,
-                    srcTypes: wa11y.options.srcTypes
-                }, options)
+                rule: rule
             },
             // Private logger.
-            logger = wa11y.logger({
-                severity: test.options.severity
-            });
+            logger;
+
+        mergeOptions(test, {
+            severity: wa11y.options.severity,
+            srcTypes: wa11y.options.srcTypes
+        }, options);
+
+        logger = wa11y.logger({
+            severity: test.options.severity
+        });
 
         eventualize(test);
 
@@ -286,7 +300,13 @@
         };
 
         test.complete = function () {
-            test.emit.apply(undefined, ["complete"].concat(Array.prototype.slice.apply(arguments)));
+            test.emit.apply(undefined,
+                ["complete"].concat(Array.prototype.slice.apply(arguments)));
+            return test;
+        };
+
+        test.fail = function (report) {
+            test.emit("fail", report);
             return test;
         };
 
@@ -307,14 +327,15 @@
 
         // Run the test.
         test.run = function (src, options) {
+            var context = wa11y.merge({
+                complete: test.complete,
+                log: test.log,
+                options: test.options
+            }, options);
             try {
-                test.rule.apply(wa11y.merge({
-                    complete: test.complete,
-                    log: test.log,
-                    options: test.options
-                }, options), [src]);
+                test.rule.apply(context, [src]);
             } catch (err) {
-                test.emit("fail", {
+                test.fail({
                     FATAL: "Error during rule evaluation: " +
                         (err.message || err)
                 });
@@ -342,6 +363,54 @@
                 return type;
             }
         });
+    };
+
+    wa11y.output = function (options) {
+        var output = {},
+            log = [];
+
+        mergeOptions(output, {
+            format: "test.source.severity.json"
+        }, options);
+        eventualize(output);
+
+        output.on("update", function (report, test, source) {
+            wa11y.each(report, function (message, severity) {
+                log.push({
+                    message: message,
+                    severity: severity,
+                    test: test,
+                    source: source
+                });
+            });
+            return output;
+        });
+
+        var buildLog = function (togo, log, segs) {
+            var seg = segs.shift();
+            togo[seg] = togo[seg] || {};
+            if (segs.length > 0) {
+                buildLog(togo[seg], log, segs);
+            } else {
+                togo[seg] = log.message;
+            }
+        };
+
+        output.print = function () {
+            var segs = output.options.format.split("."),
+                format = segs.pop(),
+                togo = {};
+            // TODO: For now support JSON
+            if (format !== "json") {
+                return;
+            }
+            wa11y.each(log, function (thisLog) {
+                buildLog(togo, thisLog, segs);
+            });
+            return togo;
+        };
+
+        return output;
     };
 
     wa11y.progress = function () {
