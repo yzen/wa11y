@@ -238,35 +238,18 @@
     });
 
     test("wa11y.logger", function () {
-        expect(3);
+        expect(2);
         var logger = wa11y.logger();
         logger.on("log", function (report) {
             deepEqual(report, {INFO: "test"}, "Correct log report");
         });
-        logger.emit("log", {INFO: "test"});
+        logger.log({INFO: "test"});
 
         logger = wa11y.logger();
         logger.on("log", function (report) {
             deepEqual(report, {ERROR: "test"}, "Correct log report");
         });
-        logger.emit("log", {ERROR: "test"});
-
-        logger = wa11y.logger({
-            severity: "ERROR"
-        });
-        logger.on("log", function (report) {
-            // This should not fire
-            deepEqual(report, {WARNING: "test"}, "Correct log report");
-        });
-        logger.emit("log", {WARNING: "test"});
-
-        logger = wa11y.logger({
-            severity: "ERROR"
-        });
-        logger.on("log", function (report) {
-            deepEqual(report, {FATAL: "test FATAL"}, "Correct log report");
-        });
-        logger.emit("log", {FATAL: "test FATAL"});
+        logger.log({ERROR: "test"});
     });
 
     test("wa11y.test complete pass", function () {
@@ -456,7 +439,7 @@
                     start();
                 })
                 .on("fail", function (report) {
-                    equal(report, "Tester is in progress. Cancelling...",
+                    deepEqual(report, {FATAL:"Tester is in progress. Cancelling..."},
                         "Cancel event report is correct");
                 })
                 .run(simpleSource)
@@ -495,7 +478,7 @@
                 }
             })
             .on("fail", function (log) {
-                equal(log, "No source supplied.", "Log is correct");
+                deepEqual(log, {FATAL:"No source supplied."}, "Log is correct");
                 ++i;
                 if (i > 1) {
                     start();
