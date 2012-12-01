@@ -4,6 +4,16 @@
 
     var wa11y = function () {};
 
+    // Default test object options.
+    wa11y.options = {
+        // Report Format.
+        format: "json",
+        // Severity threshold of log messages.
+        severity: "INFO",
+        // Types of src files to be tested.
+        srcTypes: "*" // "html", "css", ["html", "css"]
+    };
+
     wa11y.isNode = typeof module !== "undefined" && module.exports;
 
     if (wa11y.isNode) {
@@ -15,9 +25,9 @@
     // A public map of registered rules.
     wa11y.rules = {};
 
-    // This is a simple utility to iterate over an object or an array.
-    // source - object or an array.
-    // callback - function to be called upon every element of source.
+    // Iterate over an object or an array.
+    // source (Object|Array)
+    // callback (Function) - called upon every source element.
     wa11y.each = function (source, callback) {
         var i, key;
         if (wa11y.isArray(source)) {
@@ -31,9 +41,10 @@
         }
     };
 
-    // Lookup an element in an array or object based on some criteria.
-    // source - object or an array.
-    // callback - criteria function.
+    // Lookup an element in an array or an object based on some criteria.
+    // source (Object|Array).
+    // callback (Function) - evaluation criteria. Stop iteration and
+    //     return an element for which callback returns non-undefined.
     wa11y.find = function (source, callback) {
         var i, val;
         if (wa11y.isArray(source)) {
@@ -53,9 +64,9 @@
         }
     };
 
-    // This is a utility to get the index of an element in the array.
-    // value - an element of the array to look for.
-    // source Array - an array to look in.
+    // Get the index of an element in the array.
+    // value (any) - an element of the array to look for.
+    // source (Array) - an array to look in.
     wa11y.indexOf = function (value, source) {
         var i;
         if (!wa11y.isArray(source)) {
@@ -69,28 +80,6 @@
         return -1;
     };
 
-    // Remove elements from an array or object based on some criteria.
-    // source - object or an array.
-    // callback - criteria.
-    wa11y.remove = function (source, callback) {
-        var i;
-        if (wa11y.isArray(source)) {
-            for (i = 0; i < source.length; ++i) {
-                if (callback(source[i], i)) {
-                    source.splice(i, 1);
-                    --i;
-                }
-            }
-        } else {
-            for (i in source) {
-                if (callback(source[i], i)) {
-                    delete source[i];
-                }
-            }
-        }
-        return source;
-    };
-
     var mergeImpl = function (target, source) {
         var key;
         for (key in source) {
@@ -99,7 +88,8 @@
             if (thisSource !== undefined) {
                 if (thisSource !== null && typeof thisSource === "object") {
                     if (wa11y.isPrimitive(thisTarget)) {
-                        target[key] = thisTarget = wa11y.isArray(thisSource) ? [] : {};
+                        target[key] = thisTarget =
+                            wa11y.isArray(thisSource) ? [] : {};
                     }
                     mergeImpl(thisTarget, thisSource);
                 } else {
@@ -111,6 +101,8 @@
     };
 
     // Utility primarily used to merge rule options.
+    // target (Object|Array) - target to merge into.
+    // arguments 1.. (Object|Array) - sources to merge with target.
     wa11y.merge = function (target) {
         var i;
         for (i = 1; i < arguments.length; ++i) {
@@ -123,17 +115,21 @@
     };
 
     // Test an input value for being an array.
+    // obj (Any) - an object to be tested.
     wa11y.isArray = function (obj) {
         return Object.prototype.toString.call(obj) === "[object Array]";
     };
 
     // Test if the value is primitive (Function is considered primitive).
+    // value (any) - an object to be tested.
     wa11y.isPrimitive = function (value) {
         var type = typeof value;
-        return !value || type === "string" || type === "boolean" || type === "number" || type === "function";
+        return !value || type === "string" || type === "boolean" ||
+            type === "number" || type === "function";
     };
 
-    // This is a wa11y's emitter constructor function.
+    // Emitter creator function.
+    // Returns emitter object.
     wa11y.emitter = function () {
         var emitter = {
             // All listeners are stored in listeners object.
@@ -141,8 +137,8 @@
         };
 
         // Add a listener to an emitter.
-        // type - the name of the event to listen to.
-        // listener - a function that will be called when event is emitted.
+        // type (String) - the name of the event.
+        // listener (Function) - listener to be called when event is emitted.
         emitter.on = function (type, listener) {
             var listeners = emitter.listeners[type];
             if (!listeners) {
@@ -153,7 +149,8 @@
         };
 
         // Emit an event.
-        // type - the name of the event.
+        // type (String) - the name of the event.
+        // arguments 1.. - arguments that are passed to an event listeners.
         emitter.emit = function (type) {
             var args = Array.prototype.slice.apply(arguments).slice(1),
                 listeners = emitter.listeners[type];
@@ -169,11 +166,13 @@
         return emitter;
     };
 
+    // Add emitter functionality to a component.
     var eventualize = function (component) {
         var emitter = wa11y.emitter();
 
         component.emit = function (event) {
-            emitter.emit.apply(undefined, Array.prototype.slice.apply(arguments));
+            emitter.emit.apply(undefined,
+                Array.prototype.slice.apply(arguments));
             return component;
         };
 
@@ -185,18 +184,20 @@
         return component;
     };
 
+    // Wrap a callback function with a wrapper function.
     var wrap = function (callback, wrapper) {
         return wrapper(callback);
     };
 
+    // Merge component options.
     var mergeOptions = function (component) {
-        var targets = Array.prototype.slice.apply(arguments).slice(1);
+        var sources = Array.prototype.slice.apply(arguments).slice(1);
         component.options = component.options || {};
-        wa11y.merge.apply(undefined, [component.options].concat(targets));
+        wa11y.merge.apply(undefined, [component.options].concat(sources));
         return component;
     };
 
-    // Wa11y's logger constructor function.
+    // Logger creator function.
     wa11y.logger = function (options) {
         var logger = {},
             severities,
@@ -208,12 +209,18 @@
             severities: ["INFO", "WARNING", "ERROR", "FATAL"]
         }, options);
 
+        // Remove severities below threshold.
         severities = logger.options.severities;
         severities = severities.slice(
             wa11y.indexOf(logger.options.severity, severities)
         );
 
         eventualize(logger);
+
+        logger.log = function (report) {
+            logger.emit("log", report);
+            return logger;
+        };
 
         logger.on = wrap(logger.on, function (defaultOn) {
             return function (event, callback) {
@@ -249,26 +256,12 @@
         return logger;
     };
 
-    // Default test object options.
-    wa11y.options = {
-        // Report Format.
-        format: "json",
-        // Severity threshold of log messages.
-        severity: "INFO",
-        // Types of src files to be tested.
-        srcTypes: "*" // "html", "css", ["html", "css"]
-    };
-
-    // A test object that is responsible for testing source document
-    // with the rule passed.
-    // rule - is a function that will be applied to source to test the
-    // document. It can be both synchronous and asynchronous. Its
-    // signature has 1 arguments - src - the actual source document.
+    // Test object creator function.
+    // It is responsible for testing a source document using the rule passed.
+    // rule (Function) - rule to test the document. It can be either
+    // synchronous or asynchronous.
     wa11y.test = function (rule, options) {
-        var test = {
-                rule: rule
-            },
-            // Private logger.
+        var test = {rule: rule},
             logger;
 
         mergeOptions(test, {
@@ -295,16 +288,18 @@
 
         // Log something during the test.
         test.log = function (report) {
-            logger.emit("log", report);
+            logger.log(report);
             return test;
         };
 
+        // Complete the test.
         test.complete = function () {
             test.emit.apply(undefined,
                 ["complete"].concat(Array.prototype.slice.apply(arguments)));
             return test;
         };
 
+        // Fail the test.
         test.fail = function (report) {
             test.emit("fail", report);
             return test;
@@ -351,7 +346,7 @@
         return !!source.match(/([\<])([^\>]{1,})*([\>])/i);
     };
 
-    // Lightly test if string source might contain html.
+    // Lightly test if string source might contain css.
     wa11y.isCSS = function (source) {
         return !!source.match(/(?:\s*\S+\s*{[^}]*})+/i);
     };
@@ -365,6 +360,7 @@
         });
     };
 
+    // Output creator function.
     wa11y.output = function (options) {
         var output = {},
             log = [];

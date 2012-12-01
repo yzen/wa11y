@@ -171,31 +171,6 @@
         });
     });
 
-    test("wa11y.remove", function () {
-        var criteria = function (val, keyOrIndex) {
-            if (val === "find") {return keyOrIndex;}
-        }, sources = [{
-            a: "1",
-            b: "find"
-        }, {
-            a: "1",
-            c: "11"
-        }, ["1", "find", "123"],
-            ["1", "123", "hohoho"]
-        ], expected = [{
-            a: "1"
-        }, {
-            a: "1",
-            c: "11"
-        }, ["1", "123"],
-            ["1", "123", "hohoho"]
-        ];
-        wa11y.each(sources, function (source, index) {
-            deepEqual(wa11y.remove(source, criteria), expected[index],
-                "Element should be removed if it was present");
-        });
-    });
-
     test("wa11y.emitter", function () {
         var args = ["test1", "test2"];
         QUnit.expect(5);
