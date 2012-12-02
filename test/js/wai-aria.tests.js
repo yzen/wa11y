@@ -19,7 +19,7 @@
                 for (docId in log[key]) {
                     thisLog = log[key][docId];
                     deepEqual(thisLog, {
-                        message: ["wai-aria test passed."]
+                        INFO: ["wai-aria test passed."]
                     }, "Log is correct");
                 }
             }

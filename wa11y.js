@@ -192,12 +192,28 @@
         return component;
     };
 
+    // Make basic component.
+    var makeComponent = function (name, options) {
+        var component = {}, cOptions = {};
+        if (wa11y[name] && wa11y[name].options) {
+            cOptions = wa11y[name].options;
+        }
+        mergeOptions(component, cOptions, options);
+        return component;
+    };
+
+    // Make evented component.
+    var makeEventedComponent = function (name, options) {
+        var component = makeComponent(name, options);
+        eventualize(component);
+        return component;
+    };
+
     // Logger creator function.
-    wa11y.logger = function () {
-        var logger = {};
+    wa11y.logger = function (options) {
+        var logger = makeEventedComponent("logger", options);
 
-        eventualize(logger);
-
+        // Shortcut for logger.emit("log", ...);
         logger.log = function () {
             var args = Array.prototype.slice.apply(arguments);
             logger.emit.apply(undefined, ["log"].concat(args));
@@ -212,21 +228,16 @@
     // rule (Function) - rule to test the document. It can be either
     // synchronous or asynchronous.
     wa11y.test = function (rule, options) {
-        var test = {rule: rule};
+        var test = makeEventedComponent("test", options);
+        test.rule = rule;
 
-        mergeOptions(test, {
-            srcTypes: wa11y.options.srcTypes,
-            severity: wa11y.options.severity
-        }, options);
-        eventualize(test);
-
-        // Complete the test.
+        // Shortcut for test.emit("complete", ...);
         test.complete = function (report) {
             test.emit("complete", report);
             return test;
         };
 
-        // Fail the test.
+        // Shortcut for test.emit("fail", ...);
         test.fail = function (report) {
             test.emit("fail", report);
             return test;
@@ -267,12 +278,18 @@
         return test;
     };
 
-    // Lightly test if string source might contain html.
+    // Default test options.
+    wa11y.test.options = {
+        srcTypes: wa11y.options.srcTypes,
+        severity: wa11y.options.severity
+    };
+
+    // Test if string source might contain html.
     wa11y.isHTML = function (source) {
         return !!source.match(/([\<])([^\>]{1,})*([\>])/i);
     };
 
-    // Lightly test if string source might contain css.
+    // Test if string source might contain css.
     wa11y.isCSS = function (source) {
         return !!source.match(/(?:\s*\S+\s*{[^}]*})+/i);
     };
@@ -288,24 +305,22 @@
 
     // Output creator function.
     wa11y.output = function (options) {
-        var output = {},
+        var output = makeEventedComponent("output", options),
             log = [];
-
-        mergeOptions(output, {
-            format: wa11y.options.format
-        }, options);
-        eventualize(output);
 
         output.logger = output.options.logger || wa11y.logger();
 
         // Check if severity is below the threshold.
-        output.ignore = function (severity, testSeverity) {
-            var severities = ["INFO", "WARNING", "ERROR", "FATAL"];
+        // lSeverity (String) - severity of the log instance.
+        // tSeverity (String) - test severity.
+        output.ignore = function (lSeverity, tSeverity) {
+            var severities = ["INFO", "WARNING", "ERROR", "FATAL"],
                 allowed = severities.slice(
-                    wa11y.indexOf(testSeverity, severities));
-            return wa11y.indexOf(severity, allowed) < 0;
+                    wa11y.indexOf(tSeverity, severities));
+            return wa11y.indexOf(lSeverity, allowed) < 0;
         };
 
+        // Log everything passed to the log event.
         output.logger.on("log", function (report, test, source) {
             wa11y.each(report, function (message, severity) {
                 log.push({
@@ -316,6 +331,11 @@
                 });
             });
         });
+
+        // Clear the output log.
+        output.clear = function () {
+            log = [];
+        };
 
         var buildLog = function (togo, log, segs) {
             var seg = segs.shift(),
@@ -335,10 +355,7 @@
             buildLog(togo[level], log, segs);
         };
 
-        output.clear = function () {
-            log = [];
-        };
-
+        // Build and return an output.
         output.print = function () {
             var segs = output.options.format.split("."),
                 format = segs.pop(),
@@ -348,6 +365,10 @@
                 return;
             }
             wa11y.each(log, function (thisLog) {
+                if (output.ignore(thisLog.severity,
+                    thisLog.test.severity)) {
+                    return;
+                }
                 buildLog(togo, thisLog, segs.concat([]));
             });
             return togo;
@@ -356,13 +377,15 @@
         return output;
     };
 
+    // Default output options.
+    wa11y.output.options = {
+        format: wa11y.options.format
+    };
+
     wa11y.progress = function (options) {
-        var progress = {},
+        var progress = makeEventedComponent("progress", options),
             busy = false,
             completed = {};
-
-        mergeOptions(progress, options);
-        eventualize(progress);
 
         progress.output = progress.options.output || wa11y.output();
 
@@ -389,7 +412,7 @@
     };
 
     wa11y.tester = function (rule, options) {
-        var tester = {},
+        var tester = makeEventedComponent("tester", options),
             log = function (source) {
                 return function (report) {
                     tester.output.logger.log(report, {
@@ -403,12 +426,13 @@
                 };
             };
 
-        mergeOptions(tester, options);
-        eventualize(tester);
-
+        // Make tester output.
         tester.output = tester.options.output || wa11y.output();
+        // Make actual test.
         tester.test = wa11y.test(rule, tester.options.test.options);
 
+        // Run test.
+        // source (Object) - a source object to run the test on.
         tester.runTest = function (source) {
             tester.test.run.apply(undefined, [source.src, {
                 srcType: source.srcType,
@@ -417,6 +441,8 @@
             }]);
         };
 
+        // Run test for all sources.
+        // sources (Array) - array of sources.
         tester.run = function (sources) {
             var progress = wa11y.progress({output: tester.output})
                     .emit("start", sources)
@@ -461,10 +487,8 @@
     };
 
     // Initialize wa11y object.
-    // After initialization user can add listeners to onComplete event
-    // and also run tests.
     wa11y.init = function () {
-        var runner = {testers: {}},
+        var runner = makeEventedComponent("runner", wa11y.options),
             progress = wa11y.progress()
                 .on("complete", function (output) {
                     runner.emit("complete", output.print());
@@ -475,10 +499,11 @@
                 });
             });
 
-        mergeOptions(runner, wa11y.options);
-        eventualize(runner);
+        // List of testers.
+        runner.testers = {};
 
         // Configure the test runner.
+        // config (Object) - an object of rule name: rule options pairs.
         runner.configure = function (config) {
             var rules;
 
@@ -514,6 +539,8 @@
         };
 
         // Test configured rules.
+        // sources (Array|String) - a list|single of source documents to be
+        // tested.
         runner.run = function (sources) {
             if (!sources) {
                 runner.emit("fail", {FATAL: "No source supplied."});

@@ -72,18 +72,20 @@
         var testMaterial = {
             targets: [{}, {simple: "old"}, {simple: "old"}, {
                 simple: "old", other: "other"}, ["test", {
-                simple: "old"}], {test: {nested: ["hello"]}}],
+                simple: "old"}], {test: {nested: ["hello"]}},
+                {test: {a: "b"}}],
 
             sources: [[{simple: "simple"}], [{simple: "new"}], [{
                 simple: "new"}, {simple: "newer"}], [{other: "new"}],
-                [["wow", {other: "new"}]], {test: {nested: {hello: "a"}}}],
+                [["wow", {other: "new"}]], {test: {nested: {hello: "a"}}},
+                [undefined, {test: {a: "c"}}]],
 
             expected: [{simple: "simple"}, {simple: "new"}, {
                 simple: "newer"
             }, {simple: "old", other: "new"}, ["wow", {
                 other: "new",
                 simple: "old"
-            }], {test: {nested: ["hello"]}}]
+            }], {test: {nested: ["hello"]}}, {test: {a: "c"}}]
         };
         wa11y.each(testMaterial.targets, function (target, index) {
             deepEqual(wa11y.merge.apply(null,

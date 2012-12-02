@@ -10,7 +10,7 @@
             // srcType - the type of the current source.
             // engine - wa11y parsing engine ( supplies methods like: find(selector) )
             this.complete({
-                message: "wai-aria test passed."
+                INFO: "wai-aria test passed."
             });
         };
 
