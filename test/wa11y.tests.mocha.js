@@ -33,7 +33,7 @@
                         expect(err).to.be.ok;
                     } else {
                         var buttons = wrapper.find("button");
-                        expect(0).to.equal(buttons.length);
+                        expect(buttons.length).to.equal(0);
                     }
                     done();
                 });
@@ -42,7 +42,7 @@
             it("parsing valid HTML", function (done) {
                 engine.process("<div class='my'>This div is ARIA friendly</div>", function (err, wrapper) {
                     var buttons = wrapper.find(".my");
-                    expect(1).to.equal(buttons.length);
+                    expect(buttons.length).to.equal(1);
                     done();
                 });
             });
@@ -50,9 +50,9 @@
             it("more DOM functionality", function (done) {
                 engine.process("<div class='my'><span class='mytext'>Found</span><span class='mytext'>Me</span></div>", function (err, wrapper) {
                     var spans = wrapper.find(".mytext");
-                    expect(2).to.equal(spans.length);
-                    expect("Found Me").to.equal(spans[0].innerHTML + " " + spans[1].innerHTML);
-                    expect("my").to.equal(spans[0].parentNode.className);
+                    expect(spans.length).to.equal(2);
+                    expect(spans[0].innerHTML + " " + spans[1].innerHTML).to.equal("Found Me");
+                    expect(spans[0].parentNode.className).to.equal("my");
                     done();
                 });
             });
