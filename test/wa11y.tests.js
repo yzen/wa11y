@@ -1,1 +1,0 @@
-require("./js/wa11y.tests.mocha.js");

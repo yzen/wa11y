@@ -49,6 +49,6 @@
     },
     "preferGlobal": true,
     "scripts": {
-        "test": "node test/js/wa11y.tests.node.js"
+        "test": "./node_modules/mocha/bin/mocha"
     }
 }
