@@ -38,11 +38,12 @@
         }
     ],
     "dependencies": {
-        "sizzle": ">=1.1.0",
-        "jsdom": ">=0.2.19"
+        "sizzle": "latest",
+        "jsdom": "latest"
     },
     "devDependencies": {
-        "qunit": ">=0.5.0"
+        "mocha": "latest",
+        "chai": "latest"
     },
     "engines": {
         "node": ">= 0.6.0"
