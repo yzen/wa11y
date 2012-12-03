@@ -456,14 +456,23 @@
                 if (typeof source === "string") {
                     source = sources[index] = {src: source};
                 }
-                source.srcType = source.srcType || wa11y.getSrcType(source.src);
+                source.srcType = source.srcType ||
+                    wa11y.getSrcType(source.src);
 
                 wa11y.each(["complete", "fail"], function (event) {
                     tester.test.on(event, function (report) {
+                        report = report || {
+                            INFO: "Complete."
+                        };
                         log(source)(report);
-                        progress.emit(index, report);
+                        progress.emit(index);
                     });
                 });
+
+                if (!tester.test.supports(source.srcType)) {
+                    progress.emit(index);
+                    return;
+                }
 
                 if (!source.srcType || source.engine ||
                     !wa11y.engine[source.srcType]) {
