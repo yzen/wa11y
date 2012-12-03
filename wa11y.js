@@ -4,6 +4,16 @@
 
     var wa11y = function () {};
 
+    // Default test object options.
+    wa11y.options = {
+        // Report Format.
+        format: "test.source.severity.json",
+        // Severity threshold of log messages.
+        severity: "INFO",
+        // Types of src files to be tested.
+        srcTypes: "*" // "html", "css", ["html", "css"]
+    };
+
     wa11y.isNode = typeof module !== "undefined" && module.exports;
 
     if (wa11y.isNode) {
@@ -15,9 +25,9 @@
     // A public map of registered rules.
     wa11y.rules = {};
 
-    // This is a simple utility to iterate over an object or an array.
-    // source - object or an array.
-    // callback - function to be called upon every element of source.
+    // Iterate over an object or an array.
+    // source (Object|Array)
+    // callback (Function) - called upon every source element.
     wa11y.each = function (source, callback) {
         var i, key;
         if (wa11y.isArray(source)) {
@@ -31,9 +41,10 @@
         }
     };
 
-    // Lookup an element in an array or object based on some criteria.
-    // source - object or an array.
-    // callback - criteria function.
+    // Lookup an element in an array or an object based on some criteria.
+    // source (Object|Array).
+    // callback (Function) - evaluation criteria. Stop iteration and
+    //     return an element for which callback returns non-undefined.
     wa11y.find = function (source, callback) {
         var i, val;
         if (wa11y.isArray(source)) {
@@ -53,9 +64,9 @@
         }
     };
 
-    // This is a utility to get the index of an element in the array.
-    // value - an element of the array to look for.
-    // source Array - an array to look in.
+    // Get the index of an element in the array.
+    // value (any) - an element of the array to look for.
+    // source (Array) - an array to look in.
     wa11y.indexOf = function (value, source) {
         var i;
         if (!wa11y.isArray(source)) {
@@ -69,28 +80,6 @@
         return -1;
     };
 
-    // Remove elements from an array or object based on some criteria.
-    // source - object or an array.
-    // callback - criteria.
-    wa11y.remove = function (source, callback) {
-        var i;
-        if (wa11y.isArray(source)) {
-            for (i = 0; i < source.length; ++i) {
-                if (callback(source[i], i)) {
-                    source.splice(i, 1);
-                    --i;
-                }
-            }
-        } else {
-            for (i in source) {
-                if (callback(source[i], i)) {
-                    delete source[i];
-                }
-            }
-        }
-        return source;
-    };
-
     var mergeImpl = function (target, source) {
         var key;
         for (key in source) {
@@ -99,7 +88,8 @@
             if (thisSource !== undefined) {
                 if (thisSource !== null && typeof thisSource === "object") {
                     if (wa11y.isPrimitive(thisTarget)) {
-                        target[key] = thisTarget = wa11y.isArray(thisSource) ? [] : {};
+                        target[key] = thisTarget =
+                            wa11y.isArray(thisSource) ? [] : {};
                     }
                     mergeImpl(thisTarget, thisSource);
                 } else {
@@ -111,6 +101,8 @@
     };
 
     // Utility primarily used to merge rule options.
+    // target (Object|Array) - target to merge into.
+    // arguments 1.. (Object|Array) - sources to merge with target.
     wa11y.merge = function (target) {
         var i;
         for (i = 1; i < arguments.length; ++i) {
@@ -123,17 +115,21 @@
     };
 
     // Test an input value for being an array.
+    // obj (Any) - an object to be tested.
     wa11y.isArray = function (obj) {
         return Object.prototype.toString.call(obj) === "[object Array]";
     };
 
     // Test if the value is primitive (Function is considered primitive).
+    // value (any) - an object to be tested.
     wa11y.isPrimitive = function (value) {
         var type = typeof value;
-        return !value || type === "string" || type === "boolean" || type === "number" || type === "function";
+        return !value || type === "string" || type === "boolean" ||
+            type === "number" || type === "function";
     };
 
-    // This is a wa11y's emitter constructor function.
+    // Emitter creator function.
+    // Returns emitter object.
     wa11y.emitter = function () {
         var emitter = {
             // All listeners are stored in listeners object.
@@ -141,8 +137,8 @@
         };
 
         // Add a listener to an emitter.
-        // type - the name of the event to listen to.
-        // listener - a function that will be called when event is emitted.
+        // type (String) - the name of the event.
+        // listener (Function) - listener to be called when event is emitted.
         emitter.on = function (type, listener) {
             var listeners = emitter.listeners[type];
             if (!listeners) {
@@ -153,7 +149,8 @@
         };
 
         // Emit an event.
-        // type - the name of the event.
+        // type (String) - the name of the event.
+        // arguments 1.. - arguments that are passed to an event listeners.
         emitter.emit = function (type) {
             var args = Array.prototype.slice.apply(arguments).slice(1),
                 listeners = emitter.listeners[type];
@@ -169,107 +166,80 @@
         return emitter;
     };
 
-    // Wa11y's logger constructor function.
+    // Add emitter functionality to a component.
+    var eventualize = function (component) {
+        var emitter = wa11y.emitter();
+
+        component.emit = function (event) {
+            emitter.emit.apply(undefined,
+                Array.prototype.slice.apply(arguments));
+            return component;
+        };
+
+        component.on = function (event, callback) {
+            emitter.on(event, callback);
+            return component;
+        };
+
+        return component;
+    };
+
+    // Merge component options.
+    var mergeOptions = function (component) {
+        var sources = Array.prototype.slice.apply(arguments).slice(1);
+        component.options = component.options || {};
+        wa11y.merge.apply(undefined, [component.options].concat(sources));
+        return component;
+    };
+
+    // Make basic component.
+    var makeComponent = function (name, options) {
+        var component = {}, cOptions = {};
+        if (wa11y[name] && wa11y[name].options) {
+            cOptions = wa11y[name].options;
+        }
+        mergeOptions(component, cOptions, options);
+        return component;
+    };
+
+    // Make evented component.
+    var makeEventedComponent = function (name, options) {
+        var component = makeComponent(name, options);
+        eventualize(component);
+        return component;
+    };
+
+    // Logger creator function.
     wa11y.logger = function (options) {
-        options = wa11y.merge({
-            severity: wa11y.options.severity
-        }, options);
-        var logger = {},
-            emitter = options.emitter || wa11y.emitter(),
-            // Full set of default severities.
-            severities = ["INFO", "WARNING", "ERROR", "FATAL"];
+        var logger = makeEventedComponent("logger", options);
 
-        severities = severities.slice(wa11y.indexOf(options.severity,
-            severities));
-
-        // Check if severity is below the threshold.
-        logger.ignore = function (severity) {
-            return wa11y.indexOf(severity, severities) < 0;
-        };
-
-        logger.log = function (report) {
-            emitter.emit("log", report);
-            return logger;
-        };
-
-        logger.onLog = function (callback) {
-            var callbackWithSeverity = function (report) {
-                // Filter all logs below set severity.
-                var filteredReport = {}, size = 0;
-                wa11y.each(report, function (message, severity) {
-                    if (logger.ignore(severity)) {
-                        return;
-                    }
-                    filteredReport[severity] = message;
-                    ++size;
-                });
-                if (size > 0) {
-                    callback(filteredReport);
-                }
-            };
-            // Only apply callback if severity is appropriate.
-            emitter.on("log", callbackWithSeverity);
+        // Shortcut for logger.emit("log", ...);
+        logger.log = function () {
+            var args = Array.prototype.slice.apply(arguments);
+            logger.emit.apply(undefined, ["log"].concat(args));
             return logger;
         };
 
         return logger;
     };
 
-    // Default test object options.
-    wa11y.options = {
-        // Report Format.
-        format: "json",
-        // Severity threshold of log messages.
-        severity: "INFO",
-        // Types of src files to be tested.
-        srcTypes: "*" // "html", "css", ["html", "css"]
-    };
-
-    // A test object that is responsible for testing source document
-    // with the rule passed.
-    // rule - is a function that will be applied to source to test the
-    // document. It can be both synchronous and asynchronous. Its
-    // signature has 1 arguments - src - the actual source document.
+    // Test object creator function.
+    // It is responsible for testing a source document using the rule passed.
+    // rule (Function) - rule to test the document. It can be either
+    // synchronous or asynchronous.
     wa11y.test = function (rule, options) {
-        var test = {
-                rule: rule,
-                options: wa11y.merge({
-                    severity: wa11y.options.severity,
-                    srcTypes: wa11y.options.srcTypes
-                }, options)
-            },
-            // Private logger.
-            logger = wa11y.logger({
-                severity: test.options.severity
-            }),
-            // Private test emitter.
-            emitter = wa11y.emitter();
+        var test = makeEventedComponent("test", options);
+        test.rule = rule;
 
-        // test.complete - trigger test complete.
-        // test.fail - trigger test fail.
-        // test.onComplete - listen for test completion.
-        // test.onFail - listen for test failure.
-        wa11y.each(["complete", "fail"], function (event) {
-            test[event] = function (report) {
-                emitter.emit(event, report);
-                return test;
-            };
-            test["on" + event.charAt(0).toUpperCase() + event.slice(1)] =
-                function (callback) {
-                    emitter.on(event, callback);
-                    return test;
-                };
-        });
-
-        // Log something during the test.
-        test.log = function (report) {
-            logger.log(report);
+        // Shortcut for test.emit("complete", ...);
+        test.complete = function (report) {
+            test.emit("complete", report);
             return test;
         };
 
-        // Listen to log events.
-        test.onLog = function (callback) {
-            logger.onLog(callback);
+        // Shortcut for test.emit("fail", ...);
+        test.fail = function (report) {
+            test.emit("fail", report);
             return test;
         };
 
@@ -289,15 +259,13 @@
         };
 
         // Run the test.
-        test.run = function (src, srcType, engine) {
+        test.run = function (src, options) {
+            var context = wa11y.merge({
+                complete: test.complete,
+                options: test.options
+            }, options);
             try {
-                test.rule.apply({
-                    complete: test.complete,
-                    log: test.log,
-                    srcType: srcType,
-                    engine: engine,
-                    options: test.options
-                }, [src]);
+                test.rule.apply(context, [src]);
             } catch (err) {
                 test.fail({
                     FATAL: "Error during rule evaluation: " +
@@ -310,12 +278,18 @@
         return test;
     };
 
-    // Lightly test if string source might contain html.
+    // Default test options.
+    wa11y.test.options = {
+        srcTypes: wa11y.options.srcTypes,
+        severity: wa11y.options.severity
+    };
+
+    // Test if string source might contain html.
     wa11y.isHTML = function (source) {
         return !!source.match(/([\<])([^\>]{1,})*([\>])/i);
     };
 
-    // Lightly test if string source might contain html.
+    // Test if string source might contain css.
     wa11y.isCSS = function (source) {
         return !!source.match(/(?:\s*\S+\s*{[^}]*})+/i);
     };
@@ -329,159 +303,264 @@
         });
     };
 
-    wa11y.tester = function (rule, options) {
-        var tester = {
-                test: wa11y.test(rule, options)
-            },
-            emitter = wa11y.emitter();
+    // Output creator function.
+    wa11y.output = function (options) {
+        var output = makeEventedComponent("output", options),
+            log = [];
 
-        // Wrapper around private tester emitter.
-        tester.on = function (type, callback) {
-            emitter.on(type, callback);
-            return tester;
+        output.logger = output.options.logger || wa11y.logger();
+
+        // Check if severity is below the threshold.
+        // lSeverity (String) - severity of the log instance.
+        // tSeverity (String) - test severity.
+        output.ignore = function (lSeverity, tSeverity) {
+            var severities = ["INFO", "WARNING", "ERROR", "FATAL"],
+                allowed = severities.slice(
+                    wa11y.indexOf(tSeverity, severities));
+            return wa11y.indexOf(lSeverity, allowed) < 0;
         };
 
-        tester.run = function (sources) {
-            wa11y.each(sources, function (src) {
-                var srcType = wa11y.getSrcTyp(src),
-                    engine;
-                if (!srcType) {
-                    emitter.emit("fail", "Source not supported: " + src);
-                    return;
-                }
-                engine = wa11y.engine[srcType]();
-
-                wa11y.each(["onComplete", "onFail"], function (listener) {
-                    test[listener](function (report) {
-                        emitter.emit(name, report);
-                    });
-                });
-                engine.process(src, function (err, engine) {
-                    if (err) {
-                        emitter.emit("fail", "Error during document processing: " + err);
-                        return;
-                    }
-                    test.run.apply(undefined, [src, srcType, engine]);
+        // Log everything passed to the log event.
+        output.logger.on("log", function (report, test, source) {
+            wa11y.each(report, function (message, severity) {
+                log.push({
+                    message: message,
+                    severity: severity,
+                    test: test,
+                    source: source
                 });
             });
+        });
+
+        // Clear the output log.
+        output.clear = function () {
+            log = [];
+        };
+
+        var buildLog = function (togo, log, segs) {
+            var seg = segs.shift(),
+                level = log[seg];
+            if (seg === "test") {
+                level = level.name;
+            }
+            if (seg === "source") {
+                level = level.srcType
+            }
+            if (segs.length < 1) {
+                togo[level] = togo[level] || [];
+                togo[level].push(log.message);
+                return;
+            }
+            togo[level] = togo[level] || {};
+            buildLog(togo[level], log, segs);
+        };
+
+        // Build and return an output.
+        output.print = function () {
+            var segs = output.options.format.split("."),
+                format = segs.pop(),
+                togo = {};
+            // TODO: For now support JSON
+            if (format !== "json") {
+                return;
+            }
+            wa11y.each(log, function (thisLog) {
+                if (output.ignore(thisLog.severity,
+                    thisLog.test.severity)) {
+                    return;
+                }
+                buildLog(togo, thisLog, segs.concat([]));
+            });
+            return togo;
+        };
+
+        return output;
+    };
+
+    // Default output options.
+    wa11y.output.options = {
+        format: wa11y.options.format
+    };
+
+    wa11y.progress = function (options) {
+        var progress = makeEventedComponent("progress", options),
+            busy = false,
+            completed = {};
+
+        progress.output = progress.options.output || wa11y.output();
+
+        progress.isBusy = function () {
+            return busy;
+        };
+
+        progress.on("start", function (steps) {
+            busy = true;
+            wa11y.each(steps, function (step, key) {
+                completed[key] = false;
+                progress.on(key, function () {
+                    completed[key] = true;
+                    if (wa11y.find(completed, function (compl) {
+                        if (!compl) {return true;}
+                    })) {return;}
+                    busy = false;
+                    progress.emit("complete", progress.output);
+                });
+            });
+        });
+
+        return progress;
+    };
+
+    wa11y.tester = function (rule, options) {
+        var tester = makeEventedComponent("tester", options),
+            log = function (source) {
+                return function (report) {
+                    tester.output.logger.log(report, {
+                        name: tester.options.name,
+                        description: tester.options.description,
+                        severity: tester.test.options.severity
+                    }, {
+                        srcType: source.srcType
+                        // path goes here
+                    });
+                };
+            };
+
+        // Make tester output.
+        tester.output = tester.options.output || wa11y.output();
+        // Make actual test.
+        tester.test = wa11y.test(rule, tester.options.test.options);
+
+        // Run test.
+        // source (Object) - a source object to run the test on.
+        tester.runTest = function (source) {
+            tester.test.run.apply(undefined, [source.src, {
+                srcType: source.srcType,
+                engine: source.engine,
+                log: log(source)
+            }]);
+        };
+
+        // Run test for all sources.
+        // sources (Array) - array of sources.
+        tester.run = function (sources) {
+            var progress = wa11y.progress({output: tester.output})
+                    .emit("start", sources)
+                    .on("complete", function () {
+                        tester.emit("complete", progress.output);
+                    });
+
+            wa11y.each(sources, function (source, index) {
+                var engine;
+
+                if (typeof source === "string") {
+                    source = sources[index] = {src: source};
+                }
+                source.srcType = source.srcType || wa11y.getSrcType(source.src);
+
+                wa11y.each(["complete", "fail"], function (event) {
+                    tester.test.on(event, function (report) {
+                        log(source)(report);
+                        progress.emit(index, report);
+                    });
+                });
+
+                if (!source.srcType || source.engine ||
+                    !wa11y.engine[source.srcType]) {
+                    tester.runTest(source);
+                    return;
+                }
+
+                engine = wa11y.engine[source.srcType]();
+                engine.process(source.src, function (err, engine) {
+                    if (engine) {
+                        source.engine = engine;
+                    }
+                    tester.runTest(source);
+                });
+            });
+
+            return tester;
         };
 
         return tester;
     };
 
     // Initialize wa11y object.
-    // After initialization user can add listeners to onComplete event
-    // and also run tests.
     wa11y.init = function () {
-        var tester = {
-                options: wa11y.merge({}, wa11y.options)
-            },
-            inProgress = false,
-            emitter = wa11y.emitter(),
-            tests = {},
-            engine = wa11y.engine(),
-            log = {};
+        var runner = makeEventedComponent("runner", wa11y.options),
+            progress = wa11y.progress()
+                .on("complete", function (output) {
+                    runner.emit("complete", output.print());
+                })
+                .on("start", function (testers, sources) {
+                    wa11y.each(testers, function (tester) {
+                        tester.run.apply(undefined, [sources]);
+                });
+            });
 
-        // Wrapper around private tester emitter.
-        tester.on = function (type, callback) {
-            emitter.on(type, callback);
-            return tester;
-        };
+        // List of testers.
+        runner.testers = {};
 
         // Configure the test runner.
-        tester.configure = function (config) {
-            tester.options = wa11y.merge(tester.options, config);
-            if (!tester.options.rules) {
-                return tester;
-            }
-            wa11y.each(tester.options.rules, function (ruleOptions, name) {
-                var ruleObj = wa11y.rules[name],
-                    testObj,
-                    updateLog = function (report) {
-                        wa11y.each(report, function (message, severity) {
-                            if (!log[name][severity]) {
-                                log[name][severity] = [];
-                            }
-                            log[name][severity].push(message);
-                        });
-                    };
+        // config (Object) - an object of rule name: rule options pairs.
+        runner.configure = function (config) {
+            var rules;
 
-                if (!ruleObj) {
-                    return;
-                }
+            wa11y.merge(runner.options, config);
+            rules = runner.options.rules;
 
-                testObj = {
-                    test: wa11y.test(ruleObj.rule, wa11y.merge({
-                        srcTypes: tester.options.srcTypes,
-                        severity: tester.options.severity
-                    }, ruleObj.options, ruleOptions)),
-                    description: ruleObj.description
-                };
+            if (!rules) {return runner;}
 
-                emitter.on(name, function (report) {
-                    testObj.complete = true;
-                    updateLog(report);
-                    if (wa11y.find(tests, function (testObj) {
-                        if (!testObj.complete) {
-                            return true;
-                        }
-                    })) {
-                        return;
+            wa11y.each(rules, function (rOptions, name) {
+                var rule = wa11y.rules[name],
+                    tester;
+
+                if (!rule) {return;}
+
+                tester = wa11y.tester(rule.rule, {
+                    name: name,
+                    description: rule.description,
+                    output: progress.output,
+                    test: {
+                        options: wa11y.merge({}, rule.options, rOptions)
                     }
-                    inProgress = false;
-                    emitter.emit("complete", log);
                 });
 
-                testObj.test.onLog(updateLog);
-
-                wa11y.each(["onComplete", "onFail"], function (listener) {
-                    testObj.test[listener](function (report) {
-                        emitter.emit(name, report);
+                wa11y.each(["complete", "fail"], function (event) {
+                    tester.on(event, function () {
+                        progress.emit(name);
                     });
                 });
 
-                tests[name] = testObj;
+                runner.testers[name] = tester;
             });
-            return tester;
-        };
-
-        // Helper method that prepares wa11y instance for tests.
-        var reset = function () {
-            wa11y.each(tests, function (testObj, name) {
-                log[name] = {};
-                testObj.complete = false;
-            });
+            return runner;
         };
 
         // Test configured rules.
-        tester.run = function (src, srcType) {
-            if (!src) {
-                emitter.emit("fail", "No source supplied.");
+        // sources (Array|String) - a list|single of source documents to be
+        // tested.
+        runner.run = function (sources) {
+            if (!sources) {
+                runner.emit("fail", {FATAL: "No source supplied."});
                 return;
             }
-            if (inProgress) {
-                emitter.emit("cancel", "Tester is in progress. Cancelling...");
-                return;
-            }
-            inProgress = true;
-            reset();
-            engine.process(src, function (err, engine) {
-                if (err) {
-                    emitter.emit("fail", "Error during document processing: " + err);
-                    return;
-                }
-                wa11y.each(tests, function (testObj) {
-                    var test = testObj.test;
-                    if (!test.supports(srcType)) {
-                        return;
-                    }
-                    test.run.apply(undefined, [src, srcType, engine]);
+            if (progress.isBusy()) {
+                runner.emit("fail", {
+                    FATAL: "Tester is in progress. Cancelling..."
                 });
-            });
-            return tester;
+                return;
+            }
+            if (wa11y.isPrimitive(sources)) {
+                sources = [sources];
+            }
+            progress.output.clear();
+            progress.emit("start", runner.testers, sources);
+            return runner;
         };
 
-        return tester;
+        return runner;
     };
 
     // Register a rule for testing.
@@ -508,36 +587,16 @@
         return wa11y;
     };
 
+    wa11y.engine = function () {};
+
     // Process source with wa11y selectors engine.
-    wa11y.engine = function () {
+    wa11y.engine.html = function () {
         var engine = {},
             readEngineSource = function (srcPath, callback) {
                 require("fs").readFile(require("path").resolve(__dirname, srcPath),
                     "utf-8", callback);
             },
-            wrap = function (engine, doc) {
-                return {
-                    find: function (selector) {
-                        return engine(selector, doc);
-                    },
-                    findLineNumber: function (element) {
-                        if (!element || !Array.isArray(element) || element.length === 0) {
-                            return;
-                        }
-                        var position = doc.documentElement.innerHTML.indexOf(element[0].outerHTML),
-                            lineBreaks = this.lineBreaks,
-                            i, length = lineBreaks.length;
-                        if (length < 2) {
-                            return 1;
-                        }
-                        for (i=0; i < length - 1; ++i) {
-                            if (lineBreaks[i] <= position && position < lineBreaks[i+1]) {
-                                return i + 1;
-                            }
-                        }
-                    }
-                };
-            },
+            // Get array of line breaks positions in the given document
             findLineBreaks = function (doc) {
                     var lineBreaks = [0],
                     index = 0,
@@ -554,8 +613,40 @@
                         index = lineBreakIndex + 1;
                     }
                 }
-                
                 return lineBreaks;
+            },
+            wrap = function (engine, doc) {
+                return {
+                    find: function (selector) {
+                        return engine(selector, doc);
+                    },
+                    // Function to find a line number for the searched DOM element in the given document
+                    findLineNumber: function (element) {
+                        if (!element || !Array.isArray(element) || element.length === 0) {
+                            return;
+                        }
+                        var position = doc.documentElement.innerHTML.indexOf(element[0].outerHTML),
+                            lineBreaks, i, length;
+                            
+                        // Check if lineBreaks array is cached
+                        if (this.lineBreaks) {
+                            lineBreaks = this.lineBreaks;
+                        } else {
+                            lineBreaks = this.lineBreaks = findLineBreaks(doc);
+                        }
+                        
+                        length = lineBreaks.length;
+                        
+                        if (length < 2) {
+                            return 1;
+                        }
+                        for (i=0; i < length - 1; ++i) {
+                            if (lineBreaks[i] <= position && position < lineBreaks[i+1]) {
+                                return i + 1;
+                            }
+                        }
+                    }
+                };
             };
 
         engine.process = function (src, callback) {
@@ -575,7 +666,6 @@
                                 return;
                             }
                             wrapper = wrap(window.Sizzle, window.document);
-                            wrapper.lineBreaks = findLineBreaks(window.document);
                             callback(undefined, wrapper);
                         }
                     });
@@ -592,7 +682,6 @@
                     return;
                 }
                 wrapper = wrap(Sizzle, doc);
-                wrapper.lineBreaks = findLineBreaks(doc);
                 callback(undefined, wrapper);
             }
             return engine;

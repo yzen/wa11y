@@ -1,7 +1,7 @@
 /* global QUnit, ok, test, wa11y */
 (function (QUnit) {
 
-    "use strict;"
+    "use strict";
 
     QUnit.module("wa11y");
 
@@ -21,7 +21,7 @@
         },
         syncRule = function (src) {
             if (src.length > 0) {
-                this.complete(passReport)
+                this.complete(passReport);
             } else {
                 this.complete(failReport);
             }
@@ -37,14 +37,14 @@
         },
         syncRuleOptions = function (src) {
             if (this.options && this.options.someOption) {
-                this.complete(passReport)
+                this.complete(passReport);
             } else {
                 this.complete(failReport);
             }
         },
         syncRuleRevert = function (src) {
             if (src.length < 1) {
-                this.complete(failReport)
+                this.complete(failReport);
             } else {
                 this.complete(passReport);
             }
@@ -68,23 +68,24 @@
         rule: syncRuleRevert
     });
 
-/*
     test("wa11y.merge", function () {
         var testMaterial = {
             targets: [{}, {simple: "old"}, {simple: "old"}, {
                 simple: "old", other: "other"}, ["test", {
-                simple: "old"}], {test: {nested: ["hello"]}}],
+                simple: "old"}], {test: {nested: ["hello"]}},
+                {test: {a: "b"}}],
 
             sources: [[{simple: "simple"}], [{simple: "new"}], [{
                 simple: "new"}, {simple: "newer"}], [{other: "new"}],
-                [["wow", {other: "new"}]], {test: {nested: {hello: "a"}}}],
+                [["wow", {other: "new"}]], {test: {nested: {hello: "a"}}},
+                [undefined, {test: {a: "c"}}]],
 
             expected: [{simple: "simple"}, {simple: "new"}, {
                 simple: "newer"
             }, {simple: "old", other: "new"}, ["wow", {
                 other: "new",
                 simple: "old"
-            }], {test: {nested: ["hello"]}}]
+            }], {test: {nested: ["hello"]}}, {test: {a: "c"}}]
         };
         wa11y.each(testMaterial.targets, function (target, index) {
             deepEqual(wa11y.merge.apply(null,
@@ -172,31 +173,6 @@
         });
     });
 
-    test("wa11y.remove", function () {
-        var criteria = function (val, keyOrIndex) {
-            if (val === "find") {return keyOrIndex;}
-        }, sources = [{
-            a: "1",
-            b: "find"
-        }, {
-            a: "1",
-            c: "11"
-        }, ["1", "find", "123"],
-            ["1", "123", "hohoho"]
-        ], expected = [{
-            a: "1"
-        }, {
-            a: "1",
-            c: "11"
-        }, ["1", "123"],
-            ["1", "123", "hohoho"]
-        ];
-        wa11y.each(sources, function (source, index) {
-            deepEqual(wa11y.remove(source, criteria), expected[index],
-                "Element should be removed if it was present");
-        });
-    });
-
     test("wa11y.emitter", function () {
         var args = ["test1", "test2"];
         QUnit.expect(5);
@@ -217,90 +193,99 @@
         });
         emitter.emit.apply(null, ["test1"].concat(args));
     });
-*/
-    
-    test("wa11y.engine", function () {
-        QUnit.expect(4);
-        var engine = wa11y.engine();
-/*
+
+    asyncTest("wally.engine.html listener check", function () {
+        QUnit.expect(1);
+        var engine = wa11y.engine.html();
         engine.process("", function () {
             ok("Listener is properly fired");
+            start();
         });
-        engine.process("I'm not a valid HTML", function (undefined, wrapper) {
-            var buttons = wrapper.find("button");
-            equal(0, buttons.length, "There are no buttons");
+    });
+    
+    asyncTest("wally.engine.html parsing non-valid HTML", function () {
+        QUnit.expect(1);
+        var engine = wa11y.engine.html();
+        engine.process("I'm not a valid HTML", function (err, wrapper) {
+            if (wa11y.isNode) {
+                ok(err, "We cannot parse non-HTML valid entities in Node");
+            } else {
+                var buttons = wrapper.find("button");
+                equal(0, buttons.length, "There are no buttons");
+            }
+            start();
         });
-        engine.process("<div class='my'>This div is ARIA friendly</div>", function (undefined, wrapper) {
+    });
+    
+    asyncTest("wally.engine.html parsing valid HTML", function () {
+        QUnit.expect(1);
+        var engine = wa11y.engine.html();
+        engine.process("<div class='my'>This div is ARIA friendly</div>", function (err, wrapper) {
             var buttons = wrapper.find(".my");
             equal(1, buttons.length, "I found a my div!");
+            start();
         });
-        engine.process("<div class='my'><span class='mytext'>Found</span><span class='mytext'>Me</span></div>", function (undefined, wrapper) {
+    });
+
+    asyncTest("wally.engine.html more DOM functionality", function () {
+        QUnit.expect(3);
+        var engine = wa11y.engine.html();
+        engine.process("<div class='my'><span class='mytext'>Found</span><span class='mytext'>Me</span></div>", function (err, wrapper) {
             var spans = wrapper.find(".mytext");
             equal(2, spans.length, "Found mytext");
             equal("Found Me", spans[0].innerHTML + " " + spans[1].innerHTML, "DOM properties work fine");
-            ok(spans[0].parentNode.classList[0], "Proper class was found as well");
+            equal("my", spans[0].parentNode.className, "Proper class was found as well");
+            start();
         });
-*/
+    });
+    
+    asyncTest("wally.engine.html more DOM functionality", function () {
+        QUnit.expect(5);
+        var engine = wa11y.engine.html();
         engine.process("<div class='my1'>Line 1</div>\r\n<div class='my2'>Line 2</div>\r\n<div class='my3'>\r\nLine 3</div>", function (undefined, wrapper) {
              var span2 = wrapper.find(".my2"),
                  span3 = wrapper.find(".my3"),
                  noSpan = wrapper.find("HelloThisIsDog");
-             equal(4, wrapper.lineBreaks.length, "Found 4 lines of code");
+             equal(!wrapper.lineBreaks, true, "There should be no line breaks unless at least one findLineNumber is called");
              equal(2, wrapper.findLineNumber(span2), "my2 span is located on the second line of code");
+             equal(4, wrapper.lineBreaks.length, "Found 4 lines of code.");
              equal(3, wrapper.findLineNumber(span3), "my3 span is located on the third line of code");
              ok(!wrapper.findLineNumber(noSpan), "oh my, there is no line number for a non-existing element");
+             start();
         });
     });
 
-/*
     test("wa11y.logger", function () {
-        expect(3);
+        expect(2);
         var logger = wa11y.logger();
-        logger.onLog(function (report) {
+        logger.on("log", function (report) {
             deepEqual(report, {INFO: "test"}, "Correct log report");
         });
         logger.log({INFO: "test"});
 
         logger = wa11y.logger();
-        logger.onLog(function (report) {
+        logger.on("log", function (report) {
             deepEqual(report, {ERROR: "test"}, "Correct log report");
         });
         logger.log({ERROR: "test"});
-
-        logger = wa11y.logger({
-            severity: "ERROR"
-        });
-        logger.onLog(function (report) {
-            // This should not fire
-            deepEqual(report, {WARNING: "test"}, "Correct log report");
-        });
-        logger.log({WARNING: "test"});
-
-        logger = wa11y.logger({
-            severity: "ERROR"
-        });
-        logger.onLog(function (report) {
-            deepEqual(report, {FATAL: "test FATAL"}, "Correct log report");
-        });
-        logger.log({FATAL: "test FATAL"});
     });
 
     test("wa11y.test complete pass", function () {
         QUnit.expect(1);
         var test = wa11y.test(syncRule);
-        test.onComplete(function (report) {
+        test.on("complete", function (report) {
             deepEqual(report, passReport, "Correct pass report");
         });
         test.run("I am a correct source");
     });
 
-    test("wa11y.test FATAL", function () {
+    test("wa11y.test fail", function () {
         QUnit.expect(1);
         var test = wa11y.test(failRule);
-        test.onComplete(function (report) {
+        test.on("complete", function (report) {
             ok("This should never be called");
         });
-        test.onFail(function (report) {
+        test.on("fail", function (report) {
             equal(report.FATAL.indexOf("Error during rule evaluation: "), 0,
                 "Correct FATAL report");
         });
@@ -310,7 +295,7 @@
     test("wa11y.test complete fail", function () {
         QUnit.expect(1);
         var test = wa11y.test(syncRule);
-        test.onComplete(function (report) {
+        test.on("complete", function (report) {
             deepEqual(report, failReport, "Correct fail report");
         });
         test.run("");
@@ -335,7 +320,7 @@
     asyncTest("wa11y.test with async rule - pass", function () {
         QUnit.expect(1);
         var test = wa11y.test(asyncRule);
-        test.onComplete(function (report) {
+        test.on("complete", function (report) {
             deepEqual(report, passReport, "Correct pass report");
             start();
         });
@@ -345,7 +330,7 @@
     asyncTest("wa11y.test with async rule - fail", function () {
         QUnit.expect(1);
         var test = wa11y.test(asyncRule);
-        test.onComplete(function (report) {
+        test.on("complete", function (report) {
             deepEqual(report, failReport, "Correct fail report");
             start();
         });
@@ -357,7 +342,7 @@
         var test = wa11y.test(syncRuleOptions, {
             someOption: "rule option"
         });
-        test.onComplete(function (report) {
+        test.on("complete", function (report) {
             deepEqual(report, passReport, "Correct pass report");
         });
         test.run("I am a correct source");
@@ -373,10 +358,12 @@
             }
         });
         testValidator.on("complete", function (log) {
-            var key, thisLog;
+            var key, docId, thisLog;
             for (key in log) {
-                thisLog = log[key];
-                deepEqual(thisLog, expectedPassReport, "Log is correct");
+                for (docId in log[key]) {
+                    thisLog = log[key][docId];
+                    deepEqual(thisLog, expectedPassReport, "Log is correct");
+                }
             }
             start();
         });
@@ -392,10 +379,12 @@
             }
         });
         testValidator.on("complete", function (log) {
-            var key, thisLog;
+            var key, docId, thisLog;
             for (key in log) {
-                thisLog = log[key];
-                deepEqual(thisLog, expectedPassReport, "Log is correct");
+                for (docId in log[key]) {
+                    thisLog = log[key][docId];
+                    deepEqual(thisLog, expectedPassReport, "Log is correct");
+                }
             }
             start();
         });
@@ -413,10 +402,12 @@
             }
         });
         testValidator.on("complete", function (log) {
-            var key, thisLog;
+            var key, docId, thisLog;
             for (key in log) {
-                thisLog = log[key];
-                deepEqual(thisLog, expectedPassReport, "Log is correct");
+                for (docId in log[key]) {
+                    thisLog = log[key][docId];
+                    deepEqual(thisLog, expectedPassReport, "Log is correct");
+                }
             }
             start();
         });
@@ -433,10 +424,12 @@
                 }
             })
             .on("complete", function (log) {
-                var key, thisLog;
+                var key, docId, thisLog;
                 for (key in log) {
-                    thisLog = log[key];
-                    deepEqual(thisLog, expectedPassReport, "Log is correct");
+                    for (docId in log[key]) {
+                        thisLog = log[key][docId];
+                        deepEqual(thisLog, expectedPassReport, "Log is correct");
+                    }
                 }
                 start();
             })
@@ -454,15 +447,17 @@
                     }
                 })
                 .on("complete", function (log) {
-                    var key, thisLog;
+                    var key, docId, thisLog;
                     for (key in log) {
-                        thisLog = log[key];
-                        deepEqual(thisLog, expectedPassReport, "Log is correct");
+                        for (docId in log[key]) {
+                            thisLog = log[key][docId];
+                            deepEqual(thisLog, expectedPassReport, "Log is correct");
+                        }
                     }
                     start();
                 })
-                .on("cancel", function (report) {
-                    equal(report, "Tester is in progress. Cancelling...",
+                .on("fail", function (report) {
+                    deepEqual(report, {FATAL:"Tester is in progress. Cancelling..."},
                         "Cancel event report is correct");
                 })
                 .run(simpleSource)
@@ -481,10 +476,12 @@
                 }
             })
             .on("complete", function (log) {
-                var key, thisLog;
+                var key, docId, thisLog;
                 for (key in log) {
-                    thisLog = log[key];
-                    deepEqual(thisLog, expectedPassReport, "Log is correct");
+                    for (docId in log[key]) {
+                        thisLog = log[key][docId];
+                        deepEqual(thisLog, expectedPassReport, "Log is correct");
+                    }
                 }
                 ++i;
                 if (i > 1) {
@@ -499,7 +496,7 @@
                 }
             })
             .on("fail", function (log) {
-                equal(log, "No source supplied.", "Log is correct");
+                deepEqual(log, {FATAL:"No source supplied."}, "Log is correct");
                 ++i;
                 if (i > 1) {
                     start();
@@ -508,6 +505,5 @@
         validator1.run(simpleSource);
         validator2.run(emptySource);
     });
-*/
     
 })(QUnit);
