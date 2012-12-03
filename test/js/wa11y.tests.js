@@ -238,6 +238,22 @@
             start();
         });
     });
+    
+    asyncTest("wally.engine.html more DOM functionality", function () {
+        QUnit.expect(5);
+        var engine = wa11y.engine.html();
+        engine.process("<div class='my1'>Line 1</div>\r\n<div class='my2'>Line 2</div>\r\n<div class='my3'>\r\nLine 3</div>", function (undefined, wrapper) {
+             var span2 = wrapper.find(".my2"),
+                 span3 = wrapper.find(".my3"),
+                 noSpan = wrapper.find("HelloThisIsDog");
+             equal(!wrapper.lineBreaks, true, "There should be no line breaks unless at least one findLineNumber is called");
+             equal(2, wrapper.findLineNumber(span2), "my2 span is located on the second line of code");
+             equal(4, wrapper.lineBreaks.length, "Found 4 lines of code.");
+             equal(3, wrapper.findLineNumber(span3), "my3 span is located on the third line of code");
+             ok(!wrapper.findLineNumber(noSpan), "oh my, there is no line number for a non-existing element");
+             start();
+        });
+    });
 
     test("wa11y.logger", function () {
         expect(2);

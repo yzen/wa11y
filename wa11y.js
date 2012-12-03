@@ -605,10 +605,56 @@
                 require("fs").readFile(require("path").resolve(__dirname, srcPath),
                     "utf-8", callback);
             },
+            // Get array of line breaks positions in the given document
+            findLineBreaks = function (doc) {
+                    var lineBreaks = [0],
+                    index = 0,
+                    src = doc.documentElement.innerHTML || "",
+                    length = src.length,
+                    lineBreakIndex,
+                    lineBreak = "\n";
+                for (index; index < length; ++index) {
+                    lineBreakIndex = src.indexOf(lineBreak, index);
+                    if (lineBreakIndex === -1) {
+                        break;
+                    } else {
+                        lineBreaks.push(lineBreakIndex);
+                        index = lineBreakIndex + 1;
+                    }
+                }
+                return lineBreaks;
+            },
             wrap = function (engine, doc) {
                 return {
                     find: function (selector) {
                         return engine(selector, doc);
+                    },
+                    // Function to find a line number for the searched DOM element in the given document
+                    findLineNumber: function (element) {
+                        var wrapper = this;
+                        if (!element || !wa11y.isArray(element) || element.length === 0) {
+                            return;
+                        }
+                        var position = doc.documentElement.innerHTML.indexOf(element[0].outerHTML),
+                            lineBreaks, i, length;
+                            
+                        // Check if lineBreaks array is cached
+                        if (wrapper.lineBreaks) {
+                            lineBreaks = wrapper.lineBreaks;
+                        } else {
+                            lineBreaks = wrapper.lineBreaks = findLineBreaks(doc);
+                        }
+                        
+                        length = lineBreaks.length;
+                        
+                        if (length < 2) {
+                            return 1;
+                        }
+                        for (i=0; i < length - 1; ++i) {
+                            if (lineBreaks[i] <= position && position < lineBreaks[i+1]) {
+                                return i + 1;
+                            }
+                        }
                     }
                 };
             };
