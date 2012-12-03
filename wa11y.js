@@ -622,17 +622,18 @@
                     },
                     // Function to find a line number for the searched DOM element in the given document
                     findLineNumber: function (element) {
-                        if (!element || !Array.isArray(element) || element.length === 0) {
+                        var wrapper = this;
+                        if (!element || !wa11y.isArray(element) || element.length === 0) {
                             return;
                         }
                         var position = doc.documentElement.innerHTML.indexOf(element[0].outerHTML),
                             lineBreaks, i, length;
                             
                         // Check if lineBreaks array is cached
-                        if (this.lineBreaks) {
-                            lineBreaks = this.lineBreaks;
+                        if (wrapper.lineBreaks) {
+                            lineBreaks = wrapper.lineBreaks;
                         } else {
-                            lineBreaks = this.lineBreaks = findLineBreaks(doc);
+                            lineBreaks = wrapper.lineBreaks = findLineBreaks(doc);
                         }
                         
                         length = lineBreaks.length;
