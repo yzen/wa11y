@@ -9,17 +9,14 @@
         <div id="mocha"></div>
         <script type="text/javascript" src="../../node_modules/chai/chai.js"></script>
         <script type="text/javascript" src="../../node_modules/mocha/mocha.js"></script>
-        <script type="text/javascript" src="../js/wa11y.testEnv.js"></script>
-        <script type="text/javascript">
-            chai.Assertion.includeStack = true;
-            expect = chai.expect;
-            mocha.setup("bdd");
-        </script>
         <script type="text/javascript" src="../../node_modules/sizzle/sizzle.js"></script>
         <script type="text/javascript" src="../../wa11y.js"></script>
-        <script type="text/javascript" src="../wa11y.tests.js"></script>
-        <script type="text/javascript">
-            mocha.run();
-        </script>
+        <script type="text/javascript" src="../js/wa11y.tests.env.js"></script>
+
+        <!-- TESTS GO HERE -->
+        <script type="text/javascript" src="../js/wa11y.tests.js"></script>
+        <!---->
+
+        <script type="text/javascript" src="../js/wa11y.tests.run.js"></script>
     </body>
 </html>
