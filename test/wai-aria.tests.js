@@ -20,9 +20,9 @@
                         });
                     }
                 }
-                done();
             });
             testValidator.run('<p><a class="the-link" href="https://github.com/yzen/wa11y">wa11y\'s Homepage</a></p>');
+            done();
         })
     });
 

@@ -50,6 +50,6 @@
     },
     "preferGlobal": true,
     "scripts": {
-        "test": "./node_modules/mocha/bin/mocha"
+        "test": "./node_modules/mocha/bin/mocha --reporter spec --slow 500"
     }
 }
