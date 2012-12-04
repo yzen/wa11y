@@ -2,15 +2,22 @@
 <html>
     <head>
         <meta charset="utf-8">
-        <title>wai-aria Tests</title>
-        <link rel="stylesheet" href="http://code.jquery.com/qunit/qunit-1.10.0.css">
-        <script type="text/javascript" src="http://code.jquery.com/qunit/qunit-1.10.0.js"></script>
-        <script type="text/javascript" src="../../wa11y.js"></script>
-        <script type="text/javascript" src="../../node_modules/sizzle/sizzle.js"></script>
-        <script type="text/javascript" src="../../rules/wai-aria.js"></script>
-        <script type="text/javascript" src="../js/wai-aria.tests.js"></script>
+        <title>wa11y tests</title>
+        <link rel="stylesheet" type="text/css" href="../../node_modules/mocha/mocha.css">
     </head>
     <body>
-        <div id="qunit"></div>
+        <div id="mocha"></div>
+        <script type="text/javascript" src="../../node_modules/chai/chai.js"></script>
+        <script type="text/javascript" src="../../node_modules/mocha/mocha.js"></script>
+        <script type="text/javascript" src="../../node_modules/sizzle/sizzle.js"></script>
+        <script type="text/javascript" src="../../wa11y.js"></script>
+        <script type="text/javascript" src="../../rules/wai-aria.js"></script>
+        <script type="text/javascript" src="../js/wa11y.tests.env.js"></script>
+
+        <!-- TESTS GO HERE -->
+        <script type="text/javascript" src="../js/wai-aria.tests.js"></script>
+        <!---->
+
+        <script type="text/javascript" src="../js/wa11y.tests.run.js"></script>
     </body>
 </html>
