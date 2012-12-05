@@ -7,9 +7,11 @@
     // Default test object options.
     wa11y.options = {
         // Report Format.
-        format: "test.source.severity.json",
+        format: "test.source.level.severity.json",
         // Severity threshold of log messages.
         severity: "INFO",
+        // Default WCAG level
+        level: "A",
         // Types of src files to be tested.
         srcTypes: "*" // "html", "css", ["html", "css"]
     };
@@ -268,8 +270,9 @@
                 test.rule.apply(context, [src]);
             } catch (err) {
                 test.fail({
-                    FATAL: "Error during rule evaluation: " +
-                        (err.message || err)
+                    message: "Error during rule evaluation: " +
+                        (err.message || err),
+                    severity: "FATAL"
                 });
             }
             return test;
@@ -280,8 +283,7 @@
 
     // Default test options.
     wa11y.test.options = {
-        srcTypes: wa11y.options.srcTypes,
-        severity: wa11y.options.severity
+        srcTypes: wa11y.options.srcTypes
     };
 
     // Test if string source might contain html.
@@ -313,19 +315,35 @@
         // Check if severity is below the threshold.
         // lSeverity (String) - severity of the log instance.
         // tSeverity (String) - test severity.
-        output.ignore = function (lSeverity, tSeverity) {
+        // lLevel (String) - WCAG level of the log instance.
+        // tLevel (String) - test WCAG level.
+        output.ignore = function (lSeverity, tSeverity, lLevel, tLevel) {
             var severities = ["INFO", "WARNING", "ERROR", "FATAL"],
-                allowed = severities.slice(
-                    wa11y.indexOf(tSeverity, severities));
-            return wa11y.indexOf(lSeverity, allowed) < 0;
+                levels = ["A", "AA", "AAA"];
+            lSeverity = lSeverity || severities[0];
+            tSeverity = tSeverity || severities[0];
+            lLevel = lLevel || levels[0];
+            tLevel = tLevel || levels[0];
+            if (wa11y.indexOf(lLevel, levels) <
+                wa11y.indexOf(tLevel, levels)) {
+                return true;
+            }
+            return wa11y.indexOf(lSeverity, severities) <
+                wa11y.indexOf(tSeverity, severities);
         };
 
         // Log everything passed to the log event.
         output.logger.on("log", function (report, test, source) {
-            wa11y.each(report, function (message, severity) {
+            if (!wa11y.isArray(report)) {
+                report = [report];
+            }
+            wa11y.each(report, function (elem) {
                 log.push({
-                    message: message,
-                    severity: severity,
+                    message: elem.message,
+                    // If test has a default severity - use it.
+                    severity: elem.severity || test.severity,
+                    // If test has a default level - use it.
+                    level: elem.level || test.level,
                     test: test,
                     source: source
                 });
@@ -340,6 +358,15 @@
         var buildLog = function (togo, log, segs) {
             var seg = segs.shift(),
                 level = log[seg];
+            if (!level) {
+                if (segs.length < 1) {
+                    togo.messages = togo.messages || [];
+                    togo.messages.push(log.message);
+                    return;
+                }
+                buildLog(togo, log, segs);
+                return;
+            }
             if (seg === "test") {
                 level = level.name;
             }
@@ -366,7 +393,8 @@
             }
             wa11y.each(log, function (thisLog) {
                 if (output.ignore(thisLog.severity,
-                    thisLog.test.severity)) {
+                    thisLog.test.severity, thisLog.level,
+                    thisLog.test.level)) {
                     return;
                 }
                 buildLog(togo, thisLog, segs.concat([]));
@@ -418,7 +446,8 @@
                     tester.output.logger.log(report, {
                         name: tester.options.name,
                         description: tester.options.description,
-                        severity: tester.test.options.severity
+                        severity: tester.test.options.severity,
+                        level: tester.test.options.level
                     }, {
                         srcType: source.srcType
                         // path goes here
@@ -462,7 +491,8 @@
                 wa11y.each(["complete", "fail"], function (event) {
                     tester.test.on(event, function (report) {
                         report = report || {
-                            INFO: "Complete."
+                            severity: "INFO",
+                            message: "Complete."
                         };
                         log(source)(report);
                         progress.emit(index);
@@ -552,12 +582,16 @@
         // tested.
         runner.run = function (sources) {
             if (!sources) {
-                runner.emit("fail", {FATAL: "No source supplied."});
+                runner.emit("fail", {
+                    severity: "FATAL",
+                    message: "No source supplied."
+                });
                 return;
             }
             if (progress.isBusy()) {
                 runner.emit("fail", {
-                    FATAL: "Tester is in progress. Cancelling..."
+                    severity: "FATAL",
+                    message: "Tester is in progress. Cancelling..."
                 });
                 return;
             }

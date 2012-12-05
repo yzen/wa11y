@@ -3,7 +3,11 @@
 
     chai.Assertion.includeStack = true;
     expect = chai.expect;
-    mocha.setup("bdd");
+    mocha.setup({
+        ignoreLeaks: true,
+        ui: "bdd",
+        timeout: 1500
+    });
     module = {};
     
 })(wa11y, mocha, chai);

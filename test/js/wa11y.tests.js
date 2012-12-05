@@ -8,13 +8,15 @@
             var simpleSource = '<p><a class="the-link" href="https://github.com/yzen/wa11y">wa11y\'s Homepage</a></p>',
                 emptySource = "",
                 passReport = {
-                    INFO: "Source is not empty"
+                    message: "Source is not empty",
+                    severity: "INFO"
                 },
                 expectedPassReport = {
                     INFO: ["Source is not empty"]
                 },
                 failReport = {
-                    ERROR: "Source is empty"
+                    message: "Source is empty",
+                    severity: "ERROR"
                 },
                 expectedFailReport = {
                     ERROR: ["Source is empty"]
@@ -67,6 +69,32 @@
                 description: "Test synchronous rule revert",
                 rule: syncRuleRevert
             });
+
+            // This is a way to track how many tests ran;
+            var tracker = {},
+                runs = function (total) {
+                    tracker.total = total;
+                },
+                chaiExpect = expect;
+            expect = function () {
+                if (tracker.total > 0) {
+                    ++tracker.count;
+                }
+                return chaiExpect.apply(undefined,
+                    Array.prototype.slice.apply(arguments));
+            };
+            beforeEach(function () {
+                tracker = {
+                    count: 0,
+                    total: 0
+                };
+            });
+            afterEach(function () {
+                if (tracker.total !== tracker.count) {
+                    this.test.error(new Error("Expected " + tracker.total +
+                        + "but only saw " + tracker.count));
+                }
+            });
             
             it("wa11y.isHTML", function() {
                 var testMaterial = {
@@ -107,7 +135,7 @@
             });
     
             it("wa11y.emitter", function () {
-                // TODO: expect(5)
+                runs(5);
                 var args = ["test1", "test2"];
                 var emitter = wa11y.emitter();
                 emitter.on("test1", function () {
@@ -128,7 +156,7 @@
             });
     
             it("wa11y.logger", function () {
-                // TODO: expect(2)
+                runs(2);
                 var logger = wa11y.logger();
                 logger.on("log", function (report) {
                     expect(report).to.deep.equal({INFO: "test"});
@@ -144,7 +172,7 @@
     
             describe("wa11y.test", function () {
                 it("complete pass", function () {
-                    // TODO: expect(1)
+                    runs(1);
                     var test = wa11y.test(syncRule);
                     test.on("complete", function (report) {
                         expect(report).to.deep.equal(passReport);
@@ -153,20 +181,20 @@
                 });
     
                 it("fail", function () {
-                    // TODO: expect(1)
+                    runs(1);
                     var test = wa11y.test(failRule);
                     test.on("complete", function () {
                         expect("This should never be called").to.be.ok;
                     });
                     test.on("fail", function (report) {
-                        expect(report.FATAL.indexOf("Error during rule evaluation: "))
+                        expect(report.message.indexOf("Error during rule evaluation: "))
                             .to.equal(0);
                     });
                     test.run("I will fail anyways");
                 });
     
                 it("complete fail", function () {
-                    // TODO: expect(1)
+                    runs(1);
                     var test = wa11y.test(syncRule);
                     test.on("complete", function (report) {
                         expect(report).to.deep.equal(failReport);
@@ -175,7 +203,7 @@
                 });
     
                 it("supports", function () {
-                    // TODO: expect(4)
+                    runs(4);
                     var test = wa11y.test(syncRule);
                     expect(test.supports("css")).to.be.true;
                     expect(test.supports("html")).to.be.true;
@@ -187,7 +215,7 @@
                 });
     
                 it("wa11y.test with async rule - pass", function (done) {
-                    // TODO: expect(1)
+                    runs(1);
                     var test = wa11y.test(asyncRule);
                     test.on("complete", function (report) {
                         expect(report).to.deep.equal(passReport);
@@ -197,7 +225,7 @@
                 });
     
                 it("wa11y.test with async rule - fail", function (done) {
-                    // TODO: expect(1)
+                    runs(1);
                     var test = wa11y.test(asyncRule);
                     test.on("complete", function (report) {
                         expect(report).to.deep.equal(failReport);
@@ -207,7 +235,7 @@
                 });
     
                 it("wa11y.test with options", function () {
-                    // TODO: expect(2)
+                    runs(2);
                     var test = wa11y.test(syncRuleOptions, {
                         someOption: "rule option"
                     });
@@ -218,9 +246,28 @@
                     test.run("");
                 });
             });
+
+            describe("wa11y.output", function () {
+                it("ignore", function () {
+                    var output = wa11y.output(),
+                        args = [
+                            [undefined, undefined, undefined, undefined],
+                            ["INFO", "INFO", undefined, undefined],
+                            [undefined, undefined, "A", "A"],
+                            ["INFO", "INFO", "A", "A"],
+                            ["ERROR", "INFO", "A", "A"],
+                            ["ERROR", "INFO", "AA", "A"]
+                        ],
+                        expected = [false, false, false, false, false, false];
+                    wa11y.each(args, function (arggs, i) {
+                        expect(output.ignore.apply(undefined,
+                            arggs)).to.be.equal(expected[i]);
+                    });
+                });
+            });
     
             it("Simple Rule Apply", function (done) {
-                // TODO: expect(1)
+                runs(1);
                 var testValidator = wa11y.init();
                 testValidator.configure({
                     rules: {
@@ -241,7 +288,7 @@
             });
     
             it("Simple Async Rule Apply", function (done) {
-                // TODO: expect(1)
+                runs(1);
                 var testValidator = wa11y.init();
                 testValidator.configure({
                     rules: {
@@ -262,7 +309,7 @@
             });
     
             it("Simple Sync Rule with Options Apply", function (done) {
-                // TODO: expect(1)
+                runs(1);
                 var testValidator = wa11y.init();
                 testValidator.configure({
                     rules: {
@@ -285,7 +332,7 @@
             });
         
             it("Multiple rules apply", function (done) {
-                // TODO: expect(2)
+                runs(2);
                 var testValidator = wa11y.init()
                     .configure({
                         rules: {
@@ -308,7 +355,7 @@
     
             it("Multiple rules applied only once since the initial run is in progress",
                 function (done) {
-                    // TODO: expect(3)
+                    runs(3);
                     var testValidator = wa11y.init()
                         .configure({
                             rules: {
@@ -328,7 +375,8 @@
                         })
                         .on("fail", function (report) {
                             expect(report).to.deep.equal({
-                                FATAL: "Tester is in progress. Cancelling..."
+                                message: "Tester is in progress. Cancelling...",
+                                severity: "FATAL"
                             });
                         })
                         .run(simpleSource)
@@ -337,7 +385,7 @@
             );
     
             it("Multiple testers", function (done) {
-                // TODO expect(3)
+                runs(3);
                 var i = 0,
                     validator1 = wa11y.init()
                     .configure({
@@ -368,7 +416,8 @@
                     })
                     .on("fail", function (log) {
                         expect(log).to.deep.equal({
-                            FATAL: "No source supplied."
+                            message: "No source supplied.",
+                            severity: "FATAL"
                         });
                         ++i;
                         if (i > 1) {
