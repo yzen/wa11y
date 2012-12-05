@@ -86,8 +86,13 @@
 
             // This is a way to track how many tests ran;
             var tracker = {},
-                runs = function (total) {
+                runs = function (test, total) {
+                    var getTitle = function (test) {
+                        if (!test.title) {return "";}
+                        return getTitle(test.parent) + "@" + test.title;
+                    };
                     tracker.total = total;
+                    tracker.title = getTitle(test);
                 },
                 chaiExpect = expect;
             expect = function () {
@@ -105,8 +110,11 @@
             });
             afterEach(function () {
                 if (tracker.total !== tracker.count) {
-                    this.test.error(new Error("Expected " + tracker.total +
-                        + "but only saw " + tracker.count));
+                    // Using throw instead of this.test.error()
+                    // because it seems like mocha doesn't spot nested fail
+                    // in afterEach
+                    throw new Error(tracker.title + ": expected " +
+                        tracker.total + " but only saw " + tracker.count);
                 }
             });
             
@@ -149,7 +157,7 @@
             });
     
             it("wa11y.emitter", function () {
-                runs(5);
+                runs(this.test, 5);
                 var args = ["test1", "test2"];
                 var emitter = wa11y.emitter();
                 emitter.on("test1", function () {
@@ -170,7 +178,7 @@
             });
     
             it("wa11y.logger", function () {
-                runs(2);
+                runs(this.test, 2);
                 var logger = wa11y.logger();
                 logger.on("log", function (report) {
                     expect(report).to.deep.equal({INFO: "test"});
@@ -186,7 +194,7 @@
     
             describe("wa11y.test", function () {
                 it("complete pass", function () {
-                    runs(1);
+                    runs(this.test, 1);
                     var test = wa11y.test(syncRule);
                     test.on("complete", function (report) {
                         expect(report).to.deep.equal(passReport);
@@ -195,7 +203,7 @@
                 });
     
                 it("fail", function () {
-                    runs(1);
+                    runs(this.test, 1);
                     var test = wa11y.test(failRule);
                     test.on("complete", function () {
                         expect("This should never be called").to.be.ok;
@@ -208,7 +216,7 @@
                 });
     
                 it("complete fail", function () {
-                    runs(1);
+                    runs(this.test, 1);
                     var test = wa11y.test(syncRule);
                     test.on("complete", function (report) {
                         expect(report).to.deep.equal(failReport);
@@ -217,7 +225,7 @@
                 });
     
                 it("supports", function () {
-                    runs(4);
+                    runs(this.test, 4);
                     var test = wa11y.test(syncRule);
                     expect(test.supports("css")).to.be.true;
                     expect(test.supports("html")).to.be.true;
@@ -229,7 +237,7 @@
                 });
     
                 it("wa11y.test with async rule - pass", function (done) {
-                    runs(1);
+                    runs(this.test, 1);
                     var test = wa11y.test(asyncRule);
                     test.on("complete", function (report) {
                         expect(report).to.deep.equal(passReport);
@@ -239,7 +247,7 @@
                 });
     
                 it("wa11y.test with async rule - fail", function (done) {
-                    runs(1);
+                    runs(this.test, 1);
                     var test = wa11y.test(asyncRule);
                     test.on("complete", function (report) {
                         expect(report).to.deep.equal(failReport);
@@ -249,7 +257,7 @@
                 });
     
                 it("wa11y.test with options", function () {
-                    runs(2);
+                    runs(this.test, 2);
                     var test = wa11y.test(syncRuleOptions, {
                         someOption: "rule option"
                     });
@@ -281,7 +289,7 @@
             });
     
             it("Simple Rule Apply", function (done) {
-                runs(1);
+                runs(this.test, 1);
                 var testValidator = wa11y.init();
                 testValidator.configure({
                     rules: {
@@ -302,7 +310,7 @@
             });
     
             it("Simple Async Rule Apply", function (done) {
-                runs(1);
+                runs(this.test, 1);
                 var testValidator = wa11y.init();
                 testValidator.configure({
                     rules: {
@@ -323,7 +331,7 @@
             });
     
             it("Simple Sync Rule with Options Apply", function (done) {
-                runs(1);
+                runs(this.test, 1);
                 var testValidator = wa11y.init();
                 testValidator.configure({
                     rules: {
@@ -346,7 +354,7 @@
             });
         
             it("Multiple rules apply", function (done) {
-                runs(2);
+                runs(this.test, 2);
                 var testValidator = wa11y.init()
                     .configure({
                         rules: {
@@ -369,7 +377,7 @@
     
             it("Multiple rules applied only once since the initial run is in progress",
                 function (done) {
-                    runs(3);
+                    runs(this.test, 3);
                     var testValidator = wa11y.init()
                         .configure({
                             rules: {
@@ -399,7 +407,7 @@
             );
     
             it("Multiple testers", function (done) {
-                runs(3);
+                runs(this.test, 3);
                 var i = 0,
                     validator1 = wa11y.init()
                     .configure({
@@ -514,9 +522,8 @@
             describe("wally.engine.html", function () {
                 var engine;
     
-                before(function (done) {
+                before(function () {
                     engine = wa11y.engine.html();
-                    done();
                 });
     
                 it("listener check", function (done) {
@@ -557,7 +564,7 @@
                 });
                 
                 it("engine functions inside the rule", function (done) {
-                    // TODO: expect(1)
+                    runs(this.test, 1);
                     var testValidator = wa11y.init();
                     testValidator.configure({
                         rules: {
