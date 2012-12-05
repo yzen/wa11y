@@ -48,6 +48,16 @@
                     } else {
                         this.complete(passReport);
                     }
+                },
+                ruleWithEngine = function (src) {
+                    var engine = this.engine,
+                        link = engine.find(".the-link");
+                    
+                    if (link.length < 1) {
+                        this.complete(failReport);
+                    } else {
+                        this.complete(passReport);
+                    } 
                 };
     
             wa11y.register({
@@ -66,6 +76,10 @@
                 name: "syncRuleRevert",
                 description: "Test synchronous rule revert",
                 rule: syncRuleRevert
+            }).register({
+                name: "ruleWithEngine",
+                description: "Test rule with engine inside",
+                rule: ruleWithEngine
             });
             
             it("wa11y.isHTML", function() {
@@ -492,6 +506,28 @@
                         done();
                     });
                 });
+                
+                it("engine functions inside the rule", function (done) {
+                    // TODO: expect(1)
+                    var testValidator = wa11y.init();
+                    testValidator.configure({
+                        rules: {
+                            ruleWithEngine: {}
+                        }
+                    });
+                    testValidator.on("complete", function (log) {
+                        var key, docId, thisLog;
+                        for (key in log) {
+                            for (docId in log[key]) {
+                                thisLog = log[key][docId];
+                                expect(thisLog).to.deep.equal(expectedPassReport);
+                            }
+                        }
+                        done();
+                    });
+                    testValidator.run(simpleSource);
+                });
+                
             });
         });
     };
