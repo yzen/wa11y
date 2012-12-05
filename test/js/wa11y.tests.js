@@ -35,7 +35,7 @@
                     var test = this;
                     setTimeout(function () {
                         syncRule.apply(test, [src]);
-                    }, 100);
+                    }, 1);
                 },
                 syncRuleOptions = function () {
                     if (this.options && this.options.someOption) {
