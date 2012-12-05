@@ -320,10 +320,10 @@
         output.ignore = function (lSeverity, tSeverity, lLevel, tLevel) {
             var severities = ["INFO", "WARNING", "ERROR", "FATAL"],
                 levels = ["A", "AA", "AAA"];
-            lSeverity = lSeverity || severities[0];
             tSeverity = tSeverity || severities[0];
-            lLevel = lLevel || levels[0];
             tLevel = tLevel || levels[0];
+            lSeverity = lSeverity || tSeverity;
+            lLevel = lLevel || tLevel;
             if (wa11y.indexOf(lLevel, levels) <
                 wa11y.indexOf(tLevel, levels)) {
                 return true;

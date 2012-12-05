@@ -278,12 +278,102 @@
                             [undefined, undefined, "A", "A"],
                             ["INFO", "INFO", "A", "A"],
                             ["ERROR", "INFO", "A", "A"],
-                            ["ERROR", "INFO", "AA", "A"]
+                            ["ERROR", "INFO", "AA", "A"],
+                            ["INFO", "ERROR", "AA", "A"],
+                            ["INFO", "INFO", "A", "AA"],
+                            ["INFO", "INFO", undefined, "A"],
+                            ["INFO", "INFO", "A", undefined],
+                            [undefined, "INFO", "A", "A"],
+                            ["INFO", undefined, "A", "A"],
+                            ["INFO", "ERROR", "A", "AA"],
+                            ["INFO", "INFO", undefined, "AA"],
+                            [undefined, "ERROR", "AA", "AA"]
                         ],
-                        expected = [false, false, false, false, false, false];
+                        expected = [false, false, false, false, false, false,
+                            true, true, false, false, false, false, true,
+                            false, false];
                     wa11y.each(args, function (arggs, i) {
                         expect(output.ignore.apply(undefined,
                             arggs)).to.be.equal(expected[i]);
+                    });
+                });
+                var logs = [[{
+                        message: "This is a log message",
+                        severity: "INFO"
+                    }, {
+                        name: "some_rule",
+                        description: undefined,
+                        severity: "INFO",
+                        level: undefined
+                    }, {srcType: "html"}], [{
+                        message: "This is a log message",
+                        severity: "ERROR"
+                    }, {
+                        name: "some_rule",
+                        description: undefined,
+                        severity: "INFO",
+                        level: undefined
+                    }, {srcType: "html"}], [{
+                        message: "This is a log message",
+                        severity: "WARNING"
+                    }, {
+                        name: "some_other_rule",
+                        description: undefined,
+                        severity: "INFO",
+                        level: "A"
+                    }, {srcType: "html"}], [{
+                        message: "This is a log message",
+                        severity: "WARNING",
+                        level: "AAA"
+                    }, {
+                        name: "some_other_rule",
+                        description: undefined,
+                        severity: "INFO",
+                        level: "AA"
+                    }, {srcType: "css"}], [{
+                        message: "This is a log message"
+                    }, {
+                        name: "rrule",
+                        description: undefined,
+                        severity: "INFO",
+                        level: "AA"
+                    }, {srcType: "css"}], [{
+                        message: "This is a log message",
+                        severity: "INFO"
+                    }, {
+                        name: "some_rule",
+                        description: undefined,
+                        severity: "INFO",
+                        level: undefined
+                    }, {srcType: "html"}]];
+                it("print default", function () {
+                    var output = wa11y.output({
+                        format: "test.source.level.severity.json"
+                    });
+                    wa11y.each(logs, function (logArgs) {
+                        output.logger.log.apply(undefined, logArgs);
+                    });
+                    expect(output.print()).to.deep.equal({
+                        some_rule: {
+                            html: {
+                                INFO: ["This is a log message",
+                                    "This is a log message"],
+                                ERROR: ["This is a log message"]
+                            }
+                        },
+                        some_other_rule: {
+                            html: {
+                                A: {WARNING: ["This is a log message"]}
+                            },
+                            css: {
+                                AAA: {WARNING: ["This is a log message"]}
+                            }
+                        },
+                        rrule: {
+                            css: {
+                                AA: {INFO: ["This is a log message"]}
+                            }
+                        }
                     });
                 });
             });
