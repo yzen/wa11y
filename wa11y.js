@@ -422,6 +422,12 @@
             return busy;
         };
 
+        // Shortcut for progress.emit("start", ...);
+        progress.start = function () {
+            progress.emit.apply(null, ["start"].concat(Array.prototype.slice.apply(arguments)));
+            return progress;
+        };
+
         progress.on("start", function (steps) {
             busy = true;
             wa11y.each(steps, function (step, key) {
@@ -600,7 +606,7 @@
                 sources = [sources];
             }
             progress.output.clear();
-            progress.emit("start", runner.testers, sources);
+            progress.start(runner.testers, sources);
             return runner;
         };
 

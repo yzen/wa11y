@@ -269,6 +269,72 @@
                 });
             });
 
+            describe("wa11y.progress", function () {
+                it("start - complete in order", function () {
+                    var progress = wa11y.progress();
+                    progress.on("complete", function () {
+                        expect("Progress completed").to.be.ok;
+                    });
+                    progress.start({"one": "one", "two": "two",
+                        "three": "three"});
+                    progress.emit("one");
+                    progress.emit("two");
+                    progress.emit("three");
+                });
+                it("start - complete out of order", function () {
+                    var progress = wa11y.progress();
+                    progress.on("complete", function () {
+                        expect("Progress completed").to.be.ok;
+                    });
+                    progress.start([0, 1, 2]);
+                    progress.emit(0);
+                    progress.emit(2);
+                    progress.emit(1);
+                });
+                it("start - complete async", function (done) {
+                    var progress = wa11y.progress();
+                    progress.on("complete", function () {
+                        expect("Progress completed").to.be.ok;
+                        done();
+                    });
+                    progress.start({"one": "one", "two": "two",
+                        "three": "three"});
+                    setTimeout(function () {
+                        progress.emit("one");
+                    }, 1);
+                    setTimeout(function () {
+                        progress.emit("three");
+                    }, 1);
+                    progress.emit("two");
+                });
+                it("isBusy", function () {
+                    var progress = wa11y.progress();
+                    progress.on("complete", function () {
+                        expect(progress.isBusy()).to.be.false;
+                    });
+                    expect(progress.isBusy()).to.be.false;
+                    progress.start([0, 1, 2]);
+                    progress.emit(0);
+                    expect(progress.isBusy()).to.be.true;
+                    progress.emit(2);
+                    progress.emit(1);
+                });
+                it("isBusy async", function (done) {
+                    var progress = wa11y.progress();
+                    expect(progress.isBusy()).to.be.false;
+                    progress.on("complete", function () {
+                        done();
+                    });
+                    progress.start([0, 1, 2]);
+                    progress.emit(0);
+                    progress.emit(2);
+                    setTimeout(function () {
+                        progress.emit(1);
+                    }, 1);
+                    expect(progress.isBusy()).to.be.true;
+                });
+            });
+
             describe("wa11y.output", function () {
                 it("ignore", function () {
                     var output = wa11y.output(),
