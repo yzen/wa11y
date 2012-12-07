@@ -357,29 +357,30 @@
 
         var buildLog = function (togo, log, segs) {
             var seg = segs.shift(),
-                level = log[seg];
-            if (!level) {
-                if (segs.length < 1) {
-                    togo.messages = togo.messages || [];
-                    togo.messages.push(log.message);
-                    return;
-                }
-                buildLog(togo, log, segs);
-                return;
-            }
+                segment = log[seg];
             if (seg === "test") {
-                level = level.name;
+                segment = segment.name;
             }
             if (seg === "source") {
-                level = level.srcType
+                segment = segment.srcType
             }
             if (segs.length < 1) {
-                togo[level] = togo[level] || [];
-                togo[level].push(log.message);
+                togo[segment] = togo[segment] || [];
+                togo[segment].push(log.message);
                 return;
             }
-            togo[level] = togo[level] || {};
-            buildLog(togo[level], log, segs);
+            togo[segment] = togo[segment] || {};
+            buildLog(togo[segment], log, segs);
+        };
+
+        var filterSegs = function (log, segs) {
+            var togo = [];
+            wa11y.each(segs, function (seg) {
+                var segment = log[seg];
+                if (!segment) {return;}
+                togo.push(seg);
+            });
+            return togo;
         };
 
         // Build and return an output.
@@ -397,7 +398,7 @@
                     thisLog.test.level)) {
                     return;
                 }
-                buildLog(togo, thisLog, segs.concat([]));
+                buildLog(togo, thisLog, filterSegs(thisLog, segs));
             });
             return togo;
         };
