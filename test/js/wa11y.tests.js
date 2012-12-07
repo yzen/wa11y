@@ -269,6 +269,39 @@
                 });
             });
 
+            describe("wa11y.tester", function () {
+                it("runTest", function () {
+                    var tester = wa11y.tester(syncRule);
+                    tester.test.on("complete", function (report) {
+                        expect(report).to.deep.equal(passReport);
+                    });
+                    tester.runTest({
+                        src: "I am a correct source"
+                    });
+                });
+                it("runTest async", function (done) {
+                    var tester = wa11y.tester(asyncRule);
+                    tester.test.on("complete", function (report) {
+                        expect(report).to.deep.equal(passReport);
+                        done();
+                    });
+                    tester.runTest({
+                        src: "I am a correct source"
+                    });
+                });
+                it("runTest fail", function () {
+                    runs(this.test, 1);
+                    var tester = wa11y.tester(failRule);
+                    tester.test.on("fail", function (report) {
+                        expect(report.message.indexOf("Error during rule evaluation: "))
+                            .to.equal(0);
+                    });
+                    tester.runTest({
+                        src: "I will fail anyways"
+                    });
+                });
+            });
+
             describe("wa11y.progress", function () {
                 it("start - complete in order", function () {
                     var progress = wa11y.progress();

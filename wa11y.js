@@ -532,6 +532,11 @@
         return tester;
     };
 
+    // Default tester options.
+    wa11y.tester.options = {
+        test: {options: undefined}
+    };
+
     // Initialize wa11y object.
     wa11y.init = function () {
         var runner = makeEventedComponent("runner", wa11y.options),
