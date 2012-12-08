@@ -1,8 +1,10 @@
+/*global Sizzle, module*/
 (function () {
 
     "use strict";
 
-    var wa11y = function () {};
+    var wa11y = function () {},
+        env;
 
     // Default test object options.
     wa11y.options = {
@@ -20,8 +22,12 @@
 
     if (wa11y.isNode) {
         module.exports = wa11y;
+        env = {
+            wa11y: wa11y
+        };
     } else {
         window.wa11y = wa11y;
+        env = window;
     }
 
     // A public map of registered rules.
@@ -41,6 +47,33 @@
                 callback(source[key], key);
             }
         }
+    };
+
+    var getImpl = function (source, segs) {
+        var seg;
+        if (!source) {
+            return;
+        }
+        seg = segs.shift();
+        if (segs.length > 0) {
+            return getImpl(source[seg], segs);
+        }
+        return source[seg];
+    };
+    // Get a value from an object.
+    wa11y.get = function (source, path) {
+        if (!source) {
+            source = env;
+        }
+        if (!path) {
+            return;
+        }
+        return getImpl(source, path.split("."));
+    };
+
+    // A shortcut for wa11y.get that resolves global paths.
+    wa11y.resolve = function (path) {
+        return wa11y.get(undefined, path);
     };
 
     // Lookup an element in an array or an object based on some criteria.
@@ -172,7 +205,7 @@
     var eventualize = function (component) {
         var emitter = wa11y.emitter();
 
-        component.emit = function (event) {
+        component.emit = function () {
             emitter.emit.apply(undefined,
                 Array.prototype.slice.apply(arguments));
             return component;
@@ -196,10 +229,8 @@
 
     // Make basic component.
     var makeComponent = function (name, options) {
-        var component = {}, cOptions = {};
-        if (wa11y[name] && wa11y[name].options) {
-            cOptions = wa11y[name].options;
-        }
+        var component = {},
+            cOptions = wa11y.get(wa11y, [name, "options"].join("."));
         mergeOptions(component, cOptions, options);
         return component;
     };
@@ -362,7 +393,7 @@
                 segment = segment.name;
             }
             if (seg === "source") {
-                segment = segment.srcType
+                segment = segment.srcType;
             }
             if (segs.length < 1) {
                 togo[segment] = togo[segment] || [];
@@ -511,13 +542,16 @@
                     return;
                 }
 
-                if (!source.srcType || source.engine ||
-                    !wa11y.engine[source.srcType]) {
+                if (source.engine) {
                     tester.runTest(source);
                     return;
                 }
 
-                engine = wa11y.engine[source.srcType]();
+                engine = wa11y.engine.factory(source.srcType);
+                if (!engine) {
+                    tester.runTest(source);
+                    return;
+                }
                 engine.process(source.src, function (err, engine) {
                     if (engine) {
                         source.engine = engine;
@@ -643,61 +677,53 @@
     };
 
     wa11y.engine = function () {};
+    // This is an engine factory
+    wa11y.engine.factory = function (srcType) {
+        var srcEngine;
+        if (!srcType) {
+            return;
+        }
+        srcEngine = wa11y.engine[srcType];
+        if (!srcEngine) {
+            return;
+        }
+        return srcEngine();
+    };
 
-    // Process source with wa11y selectors engine.
-    wa11y.engine.html = function () {
-        var engine = {},
-            readEngineSource = function (srcPath, callback) {
-                require("fs").readFile(require("path").resolve(__dirname, srcPath),
-                    "utf-8", callback);
-            },
-            wrap = function (engine, doc) {
-                return {
-                    find: function (selector) {
-                        return engine(selector, doc);
-                    }
-                };
-            };
-
-        engine.process = function (src, callback) {
-            var doc, wrapper;
-            if (wa11y.isNode) {
-                readEngineSource("./node_modules/sizzle/sizzle.js", function (err, data) {
-                    if (err) {
-                        callback(err);
-                        return;
-                    }
-                    require("jsdom").env({
-                        html: src,
-                        src: data,
-                        done: function (err, window) {
-                            if (err) {
-                                callback(err);
-                                return;
-                            }
-                            wrapper = wrap(window.Sizzle, window.document);
-                            callback(undefined, wrapper);
-                        }
-                    });
-                });
-            } else {
-                if (src) {
-                    doc = document.implementation.createHTMLDocument("");
-                    doc.documentElement.innerHTML = src;
-                } else {
-                    doc = document;
-                }
-                if (!Sizzle) {
-                    callback(new Error("Missing selectors engine [Sizzle]."));
-                    return;
-                }
-                wrapper = wrap(Sizzle, doc);
-                callback(undefined, wrapper);
-            }
-            return engine;
-        };
-
+    // Default HTML engine.
+    wa11y.engine.html = function (options) {
+        var engine = makeComponent("engine.html", options);
+        engine.process = wa11y.resolve(engine.options.process);
         return engine;
+    };
+
+    // Default engine.html options.
+    wa11y.engine.html.options = {
+        name: "Sizzle",
+        process: "wa11y.engine.html.Sizzle"
+    };
+
+    wa11y.engine.html.Sizzle = function (src, callback) {
+        var wrap = function (Sizzle, doc) {
+            var wrapper = makeComponent();
+            wrapper.find = function (selector) {
+                return Sizzle(selector, doc);
+            };
+            return wrapper;
+        }, doc, wrapper;
+
+        if (src) {
+            doc = document.implementation.createHTMLDocument("");
+            doc.documentElement.innerHTML = src;
+        } else {
+            doc = document;
+        }
+        if (!Sizzle) {
+            callback(new Error("Missing selectors engine [Sizzle]."));
+            return;
+        }
+        wrapper = wrap(Sizzle, doc);
+        callback(undefined, wrapper);
     };
 
 })();

@@ -721,6 +721,18 @@
             });
     
             describe("operations", function () {
+                it("wa11y.get", function() {
+                    var sources = [[1, 2], [1, 2], undefined, "test", {a: "b"}, {a: "b"},
+                        {a: {b: {c: "d"}}}, {a: {b: {c: "d"}}}, {a: {b: {c: "d"}}}],
+                        paths = ["1", "2", "test", "heho", "a", "b", "a.b.c", "a.d.g",
+                            "a.b"],
+                        expected = [2, undefined, undefined, undefined, "b", undefined,
+                            "d", undefined, {c: "d"}];
+                    wa11y.each(sources, function (source, index) {
+                        expect(wa11y.get(source, paths[index])).to.deep.equal(expected[index]);
+                    });
+                });
+
                 it("wa11y.isArray", function() {
                     var values = [[], undefined, true, {length: 2, 0: 2}, [1, {}]],
                         expected = [true, false, false, false, true];
