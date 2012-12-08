@@ -300,6 +300,49 @@
                         src: "I will fail anyways"
                     });
                 });
+                it("run", function () {
+                    var tester = wa11y.tester(syncRule);
+                    tester.test.on("complete", function (report) {
+                        expect(report).to.deep.equal(passReport);
+                    });
+                    tester.run(["I am a correct source"]);
+                });
+                it("run async", function () {
+                    var tester = wa11y.tester(asyncRule);
+                    tester.test.on("complete", function (report) {
+                        expect(report).to.deep.equal(passReport);
+                    });
+                    tester.run(["I am a correct source"]);
+                });
+                it("run fail", function () {
+                    var tester = wa11y.tester(failRule);
+                    tester.test.on("fail", function (report) {
+                        expect(report.message.indexOf("Error during rule evaluation: "))
+                            .to.equal(0);
+                    });
+                    tester.run(["I am a correct source"]);
+                });
+                it("run multiple", function () {
+                    runs(this.test, 2);
+                    var tester = wa11y.tester(syncRule);
+                    tester.test.on("complete", function (report) {
+                        expect(report).to.deep.equal(passReport);
+                    });
+                    tester.run(["I am a correct source", "Other source"]);
+                });
+                it("run multiple asynt", function (done) {
+                    runs(this.test, 2);
+                    var i = 0;
+                    var tester = wa11y.tester(asyncRule);
+                    tester.test.on("complete", function (report) {
+                        expect(report).to.deep.equal(passReport);
+                        ++i;
+                        if (i == 2) {
+                            done();
+                        }
+                    });
+                    tester.run(["I am a correct source", "Other source"]);
+                });
             });
 
             describe("wa11y.progress", function () {
