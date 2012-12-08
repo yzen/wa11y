@@ -555,82 +555,17 @@
                     });
                 });
             });
-    
-            it("Simple Rule Apply", function (done) {
-                runs(this.test, 1);
-                var testValidator = wa11y.init();
-                testValidator.configure({
-                    rules: {
-                        syncRule: {}
-                    }
-                });
-                testValidator.on("complete", function (log) {
-                    var key, docId, thisLog;
-                    for (key in log) {
-                        for (docId in log[key]) {
-                            thisLog = log[key][docId];
-                            expect(thisLog).to.deep.equal(expectedPassReport);
-                        }
-                    }
-                    done();
-                });
-                testValidator.run(simpleSource);
-            });
-    
-            it("Simple Async Rule Apply", function (done) {
-                runs(this.test, 1);
-                var testValidator = wa11y.init();
-                testValidator.configure({
-                    rules: {
-                        asyncRule: {}
-                    }
-                });
-                testValidator.on("complete", function (log) {
-                    var key, docId, thisLog;
-                    for (key in log) {
-                        for (docId in log[key]) {
-                            thisLog = log[key][docId];
-                            expect(thisLog).to.deep.equal(expectedPassReport);
-                        }
-                    }
-                    done();
-                });
-                testValidator.run(simpleSource);
-            });
-    
-            it("Simple Sync Rule with Options Apply", function (done) {
-                runs(this.test, 1);
-                var testValidator = wa11y.init();
-                testValidator.configure({
-                    rules: {
-                        syncRuleOptions: {
-                            someOption: "some option"
-                        }
-                    }
-                });
-                testValidator.on("complete", function (log) {
-                    var key, docId, thisLog;
-                    for (key in log) {
-                        for (docId in log[key]) {
-                            thisLog = log[key][docId];
-                            expect(thisLog).to.deep.equal(expectedPassReport);
-                        }
-                    }
-                    done();
-                });
-                testValidator.run(simpleSource);
-            });
-        
-            it("Multiple rules apply", function (done) {
-                runs(this.test, 2);
-                var testValidator = wa11y.init()
-                    .configure({
+
+            describe("wa11y.runner", function () {
+                it("Simple Rule Apply", function (done) {
+                    runs(this.test, 1);
+                    var testValidator = wa11y.init();
+                    testValidator.configure({
                         rules: {
-                            syncRule: {},
-                            syncRuleRevert: {}
+                            syncRule: {}
                         }
-                    })
-                    .on("complete", function (log) {
+                    });
+                    testValidator.on("complete", function (log) {
                         var key, docId, thisLog;
                         for (key in log) {
                             for (docId in log[key]) {
@@ -639,18 +574,61 @@
                             }
                         }
                         done();
-                    })
-                    .run(simpleSource);
-            });
+                    });
+                    testValidator.run(simpleSource);
+                });
+        
+                it("Simple Async Rule Apply", function (done) {
+                    runs(this.test, 1);
+                    var testValidator = wa11y.init();
+                    testValidator.configure({
+                        rules: {
+                            asyncRule: {}
+                        }
+                    });
+                    testValidator.on("complete", function (log) {
+                        var key, docId, thisLog;
+                        for (key in log) {
+                            for (docId in log[key]) {
+                                thisLog = log[key][docId];
+                                expect(thisLog).to.deep.equal(expectedPassReport);
+                            }
+                        }
+                        done();
+                    });
+                    testValidator.run(simpleSource);
+                });
+
+                it("Simple Sync Rule with Options Apply", function (done) {
+                    runs(this.test, 1);
+                    var testValidator = wa11y.init();
+                    testValidator.configure({
+                        rules: {
+                            syncRuleOptions: {
+                                someOption: "some option"
+                            }
+                        }
+                    });
+                    testValidator.on("complete", function (log) {
+                        var key, docId, thisLog;
+                        for (key in log) {
+                            for (docId in log[key]) {
+                                thisLog = log[key][docId];
+                                expect(thisLog).to.deep.equal(expectedPassReport);
+                            }
+                        }
+                        done();
+                    });
+                    testValidator.run(simpleSource);
+                });
     
-            it("Multiple rules applied only once since the initial run is in progress",
-                function (done) {
-                    runs(this.test, 3);
+                it("Multiple rules apply", function (done) {
+                    runs(this.test, 2);
                     var testValidator = wa11y.init()
                         .configure({
                             rules: {
                                 syncRule: {},
-                                asyncRule: {}
+                                syncRuleRevert: {}
                             }
                         })
                         .on("complete", function (log) {
@@ -663,59 +641,83 @@
                             }
                             done();
                         })
-                        .on("fail", function (report) {
-                            expect(report).to.deep.equal({
-                                message: "Tester is in progress. Cancelling...",
+                        .run(simpleSource);
+                });
+    
+                it("Multiple rules applied only once since the initial run is in progress",
+                    function (done) {
+                        runs(this.test, 3);
+                        var testValidator = wa11y.init()
+                            .configure({
+                                rules: {
+                                    syncRule: {},
+                                    asyncRule: {}
+                                }
+                            })
+                            .on("complete", function (log) {
+                                var key, docId, thisLog;
+                                for (key in log) {
+                                    for (docId in log[key]) {
+                                        thisLog = log[key][docId];
+                                        expect(thisLog).to.deep.equal(expectedPassReport);
+                                    }
+                                }
+                                done();
+                            })
+                            .on("fail", function (report) {
+                                expect(report).to.deep.equal({
+                                    message: "Tester is in progress. Cancelling...",
+                                    severity: "FATAL"
+                                });
+                            })
+                            .run(simpleSource)
+                            .run(simpleSource);
+                    }
+                );
+    
+                it("Multiple testers", function (done) {
+                    runs(this.test, 3);
+                    var i = 0,
+                        validator1 = wa11y.init()
+                        .configure({
+                            rules: {
+                                syncRule: {},
+                                syncRuleRevert: {}
+                            }
+                        })
+                        .on("complete", function (log) {
+                            var key, docId, thisLog;
+                            for (key in log) {
+                                for (docId in log[key]) {
+                                    thisLog = log[key][docId];
+                                    expect(thisLog).to.deep.equal(expectedPassReport);
+                                }
+                            }
+                            ++i;
+                            if (i > 1) {
+                                done();
+                            }
+                        }),
+                        validator2 = wa11y.init()
+                        .configure({
+                            rules: {
+                                syncRule: {},
+                                syncRuleRevert: {}
+                            }
+                        })
+                        .on("fail", function (log) {
+                            expect(log).to.deep.equal({
+                                message: "No source supplied.",
                                 severity: "FATAL"
                             });
-                        })
-                        .run(simpleSource)
-                        .run(simpleSource);
-                }
-            );
-    
-            it("Multiple testers", function (done) {
-                runs(this.test, 3);
-                var i = 0,
-                    validator1 = wa11y.init()
-                    .configure({
-                        rules: {
-                            syncRule: {},
-                            syncRuleRevert: {}
-                        }
-                    })
-                    .on("complete", function (log) {
-                        var key, docId, thisLog;
-                        for (key in log) {
-                            for (docId in log[key]) {
-                                thisLog = log[key][docId];
-                                expect(thisLog).to.deep.equal(expectedPassReport);
+                            ++i;
+                            if (i > 1) {
+                                done();
                             }
-                        }
-                        ++i;
-                        if (i > 1) {
-                            done();
-                        }
-                    }),
-                    validator2 = wa11y.init()
-                    .configure({
-                        rules: {
-                            syncRule: {},
-                            syncRuleRevert: {}
-                        }
-                    })
-                    .on("fail", function (log) {
-                        expect(log).to.deep.equal({
-                            message: "No source supplied.",
-                            severity: "FATAL"
                         });
-                        ++i;
-                        if (i > 1) {
-                            done();
-                        }
-                    });
-                validator1.run(simpleSource);
-                validator2.run(emptySource);
+                    validator1.run(simpleSource);
+                    validator2.run(emptySource);
+                });
             });
     
             describe("operations", function () {
