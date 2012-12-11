@@ -578,9 +578,20 @@
                 .on("complete", function (output) {
                     runner.emit("complete", output.print());
                 })
-                .on("start", function (testers, sources) {
+                .on("start", function (testers, src) {
                     wa11y.each(testers, function (tester) {
-                        tester.run.apply(undefined, [sources]);
+                        src = src || tester.src;
+                        if (!src) {
+                            tester.emit("fail", {
+                                severity: "FATAL",
+                                message: "No source supplied."
+                            });
+                            return;
+                        }
+                        if (wa11y.isPrimitive(src)) {
+                            src = [src];
+                        }
+                        tester.run.apply(undefined, [src]);
                 });
             });
 
@@ -626,14 +637,7 @@
         // Test configured rules.
         // sources (Array|String) - a list|single of source documents to be
         // tested.
-        runner.run = function (sources) {
-            if (!sources) {
-                runner.emit("fail", {
-                    severity: "FATAL",
-                    message: "No source supplied."
-                });
-                return;
-            }
+        runner.run = function (src) {
             if (progress.isBusy()) {
                 runner.emit("fail", {
                     severity: "FATAL",
@@ -641,11 +645,8 @@
                 });
                 return;
             }
-            if (wa11y.isPrimitive(sources)) {
-                sources = [sources];
-            }
             progress.output.clear();
-            progress.start(runner.testers, sources);
+            progress.start(runner.testers, src);
             return runner;
         };
 

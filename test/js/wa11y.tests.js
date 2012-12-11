@@ -676,16 +676,9 @@
                 );
     
                 it("Multiple testers", function (done) {
-                    runs(this.test, 3);
+                    runs(this.test, 2);
                     var i = 0,
-                        validator1 = wa11y.init()
-                        .configure({
-                            rules: {
-                                syncRule: {},
-                                syncRuleRevert: {}
-                            }
-                        })
-                        .on("complete", function (log) {
+                        onComplete = function (log) {
                             var key, docId, thisLog;
                             for (key in log) {
                                 for (docId in log[key]) {
@@ -697,24 +690,23 @@
                             if (i > 1) {
                                 done();
                             }
-                        }),
+                        },
+                        validator1 = wa11y.init()
+                            .configure({
+                                rules: {
+                                    syncRule: {},
+                                    syncRuleRevert: {}
+                                }
+                            })
+                            .on("complete", onComplete),
                         validator2 = wa11y.init()
-                        .configure({
-                            rules: {
-                                syncRule: {},
-                                syncRuleRevert: {}
-                            }
-                        })
-                        .on("fail", function (log) {
-                            expect(log).to.deep.equal({
-                                message: "No source supplied.",
-                                severity: "FATAL"
-                            });
-                            ++i;
-                            if (i > 1) {
-                                done();
-                            }
-                        });
+                            .configure({
+                                rules: {
+                                    syncRule: {},
+                                    syncRuleRevert: {}
+                                }
+                            })
+                            .on("complete", onComplete);
                     validator1.run(simpleSource);
                     validator2.run(emptySource);
                 });
