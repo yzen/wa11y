@@ -76,6 +76,14 @@
         return wa11y.get(undefined, path);
     };
 
+    // Make array if it isn't one.
+    wa11y.makeArray = function (src) {
+        if (typeof src === "undefined") {
+            return [];
+        }
+        return wa11y.isArray(src) ? src : [src];
+    };
+
     // Lookup an element in an array or an object based on some criteria.
     // source (Object|Array).
     // callback (Function) - evaluation criteria. Stop iteration and
@@ -365,9 +373,7 @@
 
         // Log everything passed to the log event.
         output.logger.on("log", function (report, test, source) {
-            if (!wa11y.isArray(report)) {
-                report = [report];
-            }
+            report = wa11y.makeArray(report);
             wa11y.each(report, function (elem) {
                 log.push({
                     message: elem.message,
@@ -588,9 +594,7 @@
                             });
                             return;
                         }
-                        if (wa11y.isPrimitive(src)) {
-                            src = [src];
-                        }
+                        src = wa11y.makeArray(src);
                         tester.run.apply(undefined, [src]);
                 });
             });
