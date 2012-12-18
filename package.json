@@ -1,55 +1,55 @@
 {
-    "name": "wa11y",
-    "version": "0.1.0",
-    "description": "A lightweight framework for web accessibility validation of html and css resources.",
-    "keywords": [
-        "a11y",
-        "web",
-        "accessibility",
-        "validation",
-        "w3c",
-        "validator",
-        "wai"
-    ],
-    "homepage": "https://github.com/yzen/wa11y",
-    "licenses": [
-        {
-            "type": "MIT",
-            "url": "http://www.opensource.org/licenses/mit-license.php"
-        }
-    ],
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/yzen/wa11y.git"
-    },
-    "bugs": {
-        "url": "https://github.com/yzen/wa11y/issues"
-    },
-    "main": "lib/wa11y",
-    "bin": "bin/wa11y",
-    "maintainers": [
-        {
-            "name": "Alexey Novak",
-            "web": "https://github.com/anvk"
-        },
-        {
-            "name": "Yura Zenevich",
-            "web": "https://github.com/yzen"
-        }
-    ],
-    "dependencies": {
-        "sizzle": "latest",
-        "jsdom": "latest"
-    },
-    "devDependencies": {
-        "mocha": "latest",
-        "chai": "latest"
-    },
-    "engines": {
-        "node": ">= 0.6.0"
-    },
-    "preferGlobal": true,
-    "scripts": {
-        "test": "./node_modules/mocha/bin/mocha --reporter spec --slow 500"
+  "name": "wa11y",
+  "version": "0.1.0",
+  "description": "A lightweight framework for web accessibility validation of html and css resources.",
+  "keywords": [
+    "a11y",
+    "web",
+    "accessibility",
+    "validation",
+    "w3c",
+    "validator",
+    "wai"
+  ],
+  "homepage": "https://github.com/yzen/wa11y",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://www.opensource.org/licenses/mit-license.php"
     }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yzen/wa11y.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yzen/wa11y/issues"
+  },
+  "main": "lib/wa11y",
+  "bin": "bin/wa11y",
+  "maintainers": [
+    {
+      "name": "Alexey Novak",
+      "web": "https://github.com/anvk"
+    },
+    {
+      "name": "Yura Zenevich",
+      "web": "https://github.com/yzen"
+    }
+  ],
+  "dependencies": {
+    "sizzle": "latest",
+    "jsdom": "latest"
+  },
+  "devDependencies": {
+    "mocha": "latest",
+    "chai": "latest"
+  },
+  "engines": {
+    "node": ">= 0.6.0"
+  },
+  "preferGlobal": true,
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha --reporter spec --slow 500"
+  }
 }
