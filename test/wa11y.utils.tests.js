@@ -1,11 +1,15 @@
+var path = require("path");
 var wa11y = require("../wa11y.js"),
   expect = require("chai").expect;
 require("../lib/utils.js")(wa11y);
 
-describe("wally node", function () {
+describe("wally utils", function () {
   it("getConfig", function (done) {
     wa11y.getConfig(function (config) {
-      expect(config).to.be.deep.equal(require("../configs/default.json"));
+      var expectedConfig = require(path.resolve(__dirname,
+        "../configs/default.json"));
+      debugger;
+      expect(config).to.be.deep.equal(expectedConfig);
       done();
     });
   });
