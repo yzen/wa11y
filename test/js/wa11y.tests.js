@@ -330,7 +330,7 @@
           });
           tester.run(["I am a correct source", "Other source"]);
         });
-        it("run multiple asynt", function (done) {
+        it("run multiple async", function (done) {
           runs(this.test, 2);
           var i = 0;
           var tester = wa11y.tester(asyncRule);
