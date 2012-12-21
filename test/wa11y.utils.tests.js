@@ -9,11 +9,17 @@ describe("wally utils", function () {
     wa11y = require("../wa11y.js");
     require("../lib/utils.js")(wa11y);
   });
-  it("getConfig", function (done) {
-    wa11y.getConfig("../configs/default.json", function (config) {
+  it("getConfig valid path", function (done) {
+    wa11y.getConfig("../configs/default.json", function (err, config) {
       var expectedConfig = require(path.resolve(__dirname,
         "../configs/default.json"));
       expect(config).to.be.deep.equal(expectedConfig);
+      done();
+    });
+  });
+  it("getConfig invalid path", function (done) {
+    wa11y.getConfig("../configs/does_not_exist.json", function (err, config) {
+      expect(err).to.be.ok;
       done();
     });
   });
