@@ -330,7 +330,7 @@
           });
           tester.run(["I am a correct source", "Other source"]);
         });
-        it("run multiple asynt", function (done) {
+        it("run multiple async", function (done) {
           runs(this.test, 2);
           var i = 0;
           var tester = wa11y.tester(asyncRule);
@@ -713,6 +713,12 @@
       });
   
       describe("operations", function () {
+        it("wa11y.makeArray", function () {
+          var sources = [1, null, "", [1, 2], {a: "a"}];
+          wa11y.each(sources, function (source) {
+            expect(wa11y.isArray(wa11y.makeArray(source))).to.be.ok;
+          });
+        });
         it("wa11y.get", function() {
           var sources = [[1, 2], [1, 2], undefined, "test", {a: "b"}, {a: "b"},
             {a: {b: {c: "d"}}}, {a: {b: {c: "d"}}}, {a: {b: {c: "d"}}}],
