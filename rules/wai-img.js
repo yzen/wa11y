@@ -7,31 +7,34 @@
       var that = this,
         engine = this.engine,
         images = engine.find("img"),
-
+        
         checkAltAttribute = function (image) {
           var attributes = image.attributes,
+            alt = attributes.getNamedItem("alt") ? attributes.getNamedItem("alt").nodeValue : null,
+            src = attributes.getNamedItem("src") ? attributes.getNamedItem("src").nodeValue : null,
             outerHTML = image.outerHTML,
-            i, logMessage, length = attributes.length;
+            logMessage;
 
-          logMessage = { 
-            severity: "ERROR",
-            message: "Image " + outerHTML + ": should have an ALT attribute"
-          };
-
-          for (i=0; i< length; ++i) {
-            if (attributes[i].name === "alt") {
-              if (attributes[i].nodeValue !== "") {
-                return;
-              } else {
-                logMessage = {
-                  severity: "ERROR",
-                  message: "Image " + outerHTML + ": should have a non empty ALT attribute"
-                };
-                break;
-              }
-            }
+          if (!alt) {
+            logMessage = { 
+              severity: 'ERROR',
+              message: 'Image ' + outerHTML + ': does not have an "alt" attribute'
+            };
+          } else if (alt === "") {
+            logMessage = {
+              severity: 'ERROR',
+              message: 'Image ' + outerHTML + ': has an empty "alt" attribute'
+            };
+          } else if (alt === src) {
+            logMessage = {
+              severity: 'WARNING',
+              message: 'Image ' + outerHTML + ': has an "alt" attribute same as its "src"'
+            };
           }
-          that.log(logMessage);
+          
+          if (logMessage) {
+            that.log(logMessage);
+          }
         },
 
         process = function (image) {
@@ -40,17 +43,22 @@
 
       if (images.length === 0) {
         that.complete({
-          severity: "INFO",
-          message: "No images found in the source."
+          severity: 'INFO',
+          message: 'No images found in the source.'
         });
         return;
       }
 
       var i, length = images.length;
 
-      for (i = 0; i< length; ++i) {
+      for (i = 0; i < length; ++i) {
         process(images[i]);
       }
+      
+      that.complete({
+        severity: 'INFO',
+        message: 'Complete.'
+      });
     };
 
     wa11y.register({
