@@ -103,5 +103,29 @@ describe("wa11y utils", function () {
         done();
       });
     });
+    it("expandSrc simple", function (done) {
+      var rules = [{
+        src: "../*.json"
+      }, {
+        src: ["../*.json", "../*.md"]
+      }, {
+        src: ["../bin/*"]
+      }],
+        expected = [["package.json"], ["package.json", "README.md"],
+          ["wa11y"]],
+        i = 0;
+      wa11y.each(rules, function (rule, index) {
+        wa11y.fs.expandSrc(rule, function () {
+          wa11y.each(rule.src, function (thisSrc, srcIndex) {
+            expect(thisSrc.indexOf(expected[index][srcIndex]) > -1).to.be.ok;
+          });
+          ++i;
+          if (i < rules.length) {
+            return;
+          }
+          done();
+        });
+      });
+    });
   });
 });
