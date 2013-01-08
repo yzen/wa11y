@@ -5,12 +5,13 @@ var path = require("path"),
 require("../lib/utils.js")(wa11y);
 
 describe("wa11y utils", function () {
-  var defaultConfigPath = "../configs/default.json",
-    defaultConfig = fs.readFileSync(path.resolve(__dirname,
+  var defaultConfigPath = "./configs/default.json",
+    defaultConfig = fs.readFileSync(path.resolve(__dirname, "..",
       defaultConfigPath), "utf8"),
     defaultConfigParsed = JSON.parse(defaultConfig),
-    thisFilePath = "../test/wa11y.utils.tests.js",
-    thisFile = fs.readFileSync(path.resolve(__dirname, thisFilePath), "utf8");
+    thisFilePath = "./test/wa11y.utils.tests.js",
+    thisFile = fs.readFileSync(path.resolve(__dirname, "..", thisFilePath),
+      "utf8");
 
   afterEach(function () {
     delete require.cache[path.resolve(__dirname, "../wa11y.js")];
