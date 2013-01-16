@@ -825,7 +825,7 @@
             {source: "  a a   ", expected: "a a"},
             {source: "value", expected: "value"}
           ];
-          engine.process("", function (err, wrapper) {
+          engine.process("<a></a>", function (err, wrapper) {
             wa11y.each(testMaterial, function (oneTest) {
               expect(wrapper.trim(oneTest.source)).to.equal(oneTest.expected);
             });
