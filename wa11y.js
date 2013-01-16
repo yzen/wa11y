@@ -32,7 +32,7 @@
 
   // A public map of registered rules.
   wa11y.rules = {};
-
+  
   // Iterate over an object or an array.
   // source (Object|Array)
   // callback (Function) - called upon every source element.
@@ -713,6 +713,12 @@
       var wrapper = makeComponent();
       wrapper.find = function (selector) {
         return Sizzle(selector, doc);
+      };
+      wrapper.trim = function (value) {
+        if (typeof value !== "string") {
+          return value;
+        }
+        return value.replace(/^\s+|\s+$/g, "");
       };
       return wrapper;
     }, doc, wrapper;

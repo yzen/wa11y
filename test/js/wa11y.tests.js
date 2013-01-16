@@ -812,6 +812,25 @@
             done();
           });
         });
+        
+        it("trim", function() {
+          var testMaterial = [
+            {source: "", expected: ""},
+            {source: "      ", expected: ""},
+            {source: "     a   ", expected: "a"},
+            {source: null, expected: null},
+            {source: 67, expected: 67},
+            {source: "a        ", expected: "a"},
+            {source: "        a", expected: "a"},
+            {source: "  a a   ", expected: "a a"},
+            {source: "value", expected: "value"}
+          ];
+          engine.process("<a></a>", function (err, wrapper) {
+            wa11y.each(testMaterial, function (oneTest) {
+              expect(wrapper.trim(oneTest.source)).to.equal(oneTest.expected);
+            });
+          });
+        });
   
         it("parsing non-valid HTML", function (done) {
           engine.process("I'm not a valid HTML", function (err, wrapper) {
