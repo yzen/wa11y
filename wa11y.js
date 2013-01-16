@@ -32,14 +32,6 @@
 
   // A public map of registered rules.
   wa11y.rules = {};
-
-  // Function to trim a string from leading and closing whitespaces
-  wa11y.trim = function (value) {
-    if (typeof value !== "string") {
-        return value;
-    }
-    return value.replace(/^\s+|\s+$/g, "");
-  };
   
   // Iterate over an object or an array.
   // source (Object|Array)
@@ -721,6 +713,12 @@
       var wrapper = makeComponent();
       wrapper.find = function (selector) {
         return Sizzle(selector, doc);
+      };
+      wrapper.trim = function (value) {
+        if (typeof value !== "string") {
+          return value;
+        }
+        return value.replace(/^\s+|\s+$/g, "");
       };
       return wrapper;
     }, doc, wrapper;
