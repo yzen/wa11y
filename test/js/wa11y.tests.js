@@ -797,6 +797,23 @@
             expect(wa11y.find(source, criteria), expected[index]).to.equal(expected[index]);
           });
         });
+        
+        it("wa11y.trim", function() {
+          var testMaterial = [
+            {source: "", expected: ""},
+            {source: "      ", expected: ""},
+            {source: "     a   ", expected: "a"},
+            {source: null, expected: null},
+            {source: 67, expected: 67},
+            {source: "a        ", expected: "a"},
+            {source: "        a", expected: "a"},
+            {source: "  a a   ", expected: "a a"},
+            {source: "value", expected: "value"}
+          ];
+          wa11y.each(testMaterial, function (oneTest) {
+            expect(wa11y.trim(oneTest.source)).to.equal(oneTest.expected);
+          });
+        });
       });
   
       describe("wally.engine.html", function () {
