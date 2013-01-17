@@ -171,6 +171,28 @@
       type === "number" || type === "function";
   };
 
+  // Test if the value is empty: faulty will return true, array with length 0
+  // will return true, object with no options will return true. Otherwise
+  // false.
+  wa11y.isEmpty = function (value) {
+    var key;
+    if (!value) {
+      return true;
+    }
+    if (wa11y.isPrimitive(value)) {
+      return true;
+    }
+    if (wa11y.isArray(value)) {
+      return value.length < 1;
+    }
+    for (key in value) {
+      if (value[key] !== undefined) {
+        return false;
+      }
+    }
+    return true;
+  };
+
   // Emitter creator function.
   // Returns emitter object.
   wa11y.emitter = function () {
@@ -466,6 +488,10 @@
     };
 
     progress.on("start", function (steps) {
+      if (wa11y.isEmpty(steps)) {
+        progress.emit("complete", progress.output);
+        return;
+      }
       busy = true;
       wa11y.each(steps, function (step, key) {
         completed[key] = false;
