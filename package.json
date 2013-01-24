@@ -39,7 +39,9 @@
   ],
   "dependencies": {
     "sizzle": "latest",
-    "jsdom": "latest"
+    "jsdom": "latest",
+    "glob": "latest",
+    "optimist": "latest"
   },
   "devDependencies": {
     "mocha": "latest",

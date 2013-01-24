@@ -32,7 +32,7 @@
 
   // A public map of registered rules.
   wa11y.rules = {};
-
+  
   // Iterate over an object or an array.
   // source (Object|Array)
   // callback (Function) - called upon every source element.
@@ -169,6 +169,28 @@
     var type = typeof value;
     return !value || type === "string" || type === "boolean" ||
       type === "number" || type === "function";
+  };
+
+  // Test if the value is empty: faulty will return true, array with length 0
+  // will return true, object with no options will return true. Otherwise
+  // false.
+  wa11y.isEmpty = function (value) {
+    var key;
+    if (!value) {
+      return true;
+    }
+    if (wa11y.isPrimitive(value)) {
+      return true;
+    }
+    if (wa11y.isArray(value)) {
+      return value.length < 1;
+    }
+    for (key in value) {
+      if (value[key] !== undefined) {
+        return false;
+      }
+    }
+    return true;
   };
 
   // Emitter creator function.
@@ -466,6 +488,10 @@
     };
 
     progress.on("start", function (steps) {
+      if (wa11y.isEmpty(steps)) {
+        progress.emit("complete", progress.output);
+        return;
+      }
       busy = true;
       wa11y.each(steps, function (step, key) {
         completed[key] = false;
@@ -713,6 +739,12 @@
       var wrapper = makeComponent();
       wrapper.find = function (selector) {
         return Sizzle(selector, doc);
+      };
+      wrapper.trim = function (value) {
+        if (typeof value !== "string") {
+          return value;
+        }
+        return value.replace(/^\s+|\s+$/g, "");
       };
       return wrapper;
     }, doc, wrapper;

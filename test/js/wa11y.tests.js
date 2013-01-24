@@ -346,6 +346,16 @@
       });
 
       describe("wa11y.progress", function () {
+        it("start - empty steps", function () {
+          runs(this.test, 3);
+          var progress = wa11y.progress();
+          progress.on("complete", function () {
+            expect("Progress completed").to.be.ok;
+          });
+          progress.start([]);
+          progress.start({});
+          progress.start();
+        });
         it("start - complete in order", function () {
           var progress = wa11y.progress();
           progress.on("complete", function () {
@@ -713,6 +723,13 @@
       });
   
       describe("operations", function () {
+        it("wa11y.isEmpty", function () {
+          var values = [[], undefined, true, {}, {a: "test"}, {a: null}, [1]],
+            expected = [true, true, true, true, false, false, false];
+          wa11y.each(values, function (value, index) {
+            expect(wa11y.isEmpty(value)).to.equal(expected[index]);
+          });
+        });
         it("wa11y.makeArray", function () {
           var sources = [1, null, "", [1, 2], {a: "a"}];
           wa11y.each(sources, function (source) {
@@ -810,6 +827,25 @@
           engine.process("", function () {
             expect(true).to.be.true;
             done();
+          });
+        });
+        
+        it("trim", function() {
+          var testMaterial = [
+            {source: "", expected: ""},
+            {source: "      ", expected: ""},
+            {source: "     a   ", expected: "a"},
+            {source: null, expected: null},
+            {source: 67, expected: 67},
+            {source: "a        ", expected: "a"},
+            {source: "        a", expected: "a"},
+            {source: "  a a   ", expected: "a a"},
+            {source: "value", expected: "value"}
+          ];
+          engine.process("<a></a>", function (err, wrapper) {
+            wa11y.each(testMaterial, function (oneTest) {
+              expect(wrapper.trim(oneTest.source)).to.equal(oneTest.expected);
+            });
           });
         });
   
