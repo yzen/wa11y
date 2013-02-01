@@ -612,7 +612,7 @@
         })
         .on("start", function (testers, src) {
           wa11y.each(testers, function (tester) {
-            src = src || tester.src;
+            src = src || tester.test.options.src;
             if (!src) {
               tester.emit("fail", {
                 severity: "FATAL",
