@@ -7,7 +7,6 @@
       var that = this,
         engine = this.engine,
         images = engine.find("img"),
-        
         checkAltAttribute = function (image) {
           var attributes = image.attributes,
             alt = attributes.getNamedItem("alt") ? attributes.getNamedItem("alt").nodeValue : null,
@@ -24,6 +23,11 @@
             logMessage = {
               severity: 'ERROR',
               message: 'Image ' + outerHTML + ': has an empty "alt" attribute'
+            };
+          } else if (engine.trim(alt) === "") {
+            logMessage = {
+              severity: 'ERROR',
+              message: 'Image ' + outerHTML + ': has an invalid "alt" attribute'
             };
           } else if (alt === src) {
             logMessage = {
