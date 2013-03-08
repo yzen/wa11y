@@ -1,8 +1,6 @@
 {
-  "src": "./*.html",
+  "src": "../test/html/*.html",
   "rules": {
-    "wai-aria": {
-      "src": ["../test/html/*.html"]
-    }
+    "wai-aria": {}
   }
 }
