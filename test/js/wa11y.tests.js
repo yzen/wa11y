@@ -7,6 +7,20 @@
     describe("wa11y", function() {
       var simpleSource = '<p><a class="the-link" href="https://github.com/yzen/wa11y">wa11y\'s Homepage</a></p>',
         emptySource = "",
+        passOutputPrint = {
+          testRule: {
+            html: {
+              INFO: ["Source is not empty"]
+            }
+          }
+        },
+        passMultipleOutputPrint = {
+          testRule: {
+            html: {
+              INFO: ["Source is not empty", "Source is not empty"]
+            }
+          }
+        },
         passReport = {
           message: "Source is not empty",
           severity: "INFO"
@@ -270,78 +284,73 @@
       });
 
       describe("wa11y.tester", function () {
-        it("runTest", function () {
-          var tester = wa11y.tester(syncRule);
-          tester.test.on("complete", function (report) {
-            expect(report).to.deep.equal(passReport);
-          });
-          tester.runTest({
-            src: "I am a correct source"
-          });
-        });
-        it("runTest async", function (done) {
-          var tester = wa11y.tester(asyncRule);
-          tester.test.on("complete", function (report) {
-            expect(report).to.deep.equal(passReport);
-            done();
-          });
-          tester.runTest({
-            src: "I am a correct source"
-          });
-        });
-        it("runTest fail", function () {
-          runs(this.test, 1);
-          var tester = wa11y.tester(failRule);
-          tester.test.on("fail", function (report) {
-            expect(report.message.indexOf("Error during rule evaluation: "))
-              .to.equal(0);
-          });
-          tester.runTest({
-            src: "I will fail anyways"
-          });
-        });
         it("run", function () {
-          var tester = wa11y.tester(syncRule);
-          tester.test.on("complete", function (report) {
-            expect(report).to.deep.equal(passReport);
+          var tester = wa11y.tester(syncRule, {
+            name: "testRule"
           });
-          tester.run(["I am a correct source"]);
+          tester.on("complete", function (output) {
+            expect(output.print()).to.deep.equal(passOutputPrint);
+          });
+          tester.run([{
+            src: "I am a correct source",
+            srcType: "html"
+          }]);
         });
         it("run async", function () {
-          var tester = wa11y.tester(asyncRule);
-          tester.test.on("complete", function (report) {
-            expect(report).to.deep.equal(passReport);
+          var tester = wa11y.tester(asyncRule, {
+            name: "testRule"
           });
-          tester.run(["I am a correct source"]);
+          tester.on("complete", function (output) {
+            expect(output.print()).to.deep.equal(passOutputPrint);
+          });
+          tester.run([{
+            src: "I am a correct source",
+            srcType: "html"
+          }]);
         });
         it("run fail", function () {
-          var tester = wa11y.tester(failRule);
-          tester.test.on("fail", function (report) {
+          var tester = wa11y.tester(failRule, {
+            name: "failRule"
+          });
+          tester.on("fail", function (report) {
             expect(report.message.indexOf("Error during rule evaluation: "))
               .to.equal(0);
           });
-          tester.run(["I am a correct source"]);
+          tester.run([{
+            src: "I am a correct source",
+            srcType: "html"
+          }]);
         });
         it("run multiple", function () {
-          runs(this.test, 2);
-          var tester = wa11y.tester(syncRule);
-          tester.test.on("complete", function (report) {
-            expect(report).to.deep.equal(passReport);
+          var tester = wa11y.tester(syncRule, {
+            name: "testRule"
           });
-          tester.run(["I am a correct source", "Other source"]);
+          tester.on("complete", function (output) {
+            expect(output.print()).to.deep.equal(passMultipleOutputPrint);
+          });
+          tester.run([{
+            src: "I am a correct source",
+            srcType: "html"
+          }, {
+            src: "Other source",
+            srcType: "html"
+          }]);
         });
         it("run multiple async", function (done) {
-          runs(this.test, 2);
-          var i = 0;
-          var tester = wa11y.tester(asyncRule);
-          tester.test.on("complete", function (report) {
-            expect(report).to.deep.equal(passReport);
-            ++i;
-            if (i == 2) {
-              done();
-            }
+          var tester = wa11y.tester(asyncRule, {
+            name: "testRule"
           });
-          tester.run(["I am a correct source", "Other source"]);
+          tester.on("complete", function (output) {
+            expect(output.print()).to.deep.equal(passMultipleOutputPrint);
+            done();
+          });
+          tester.run([{
+            src: "I am a correct source",
+            srcType: "html"
+          }, {
+            src: "Other source",
+            srcType: "html"
+          }]);
         });
       });
 
