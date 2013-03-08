@@ -4,7 +4,12 @@
   "use strict";
 
   var wa11y = function () {},
-    env;
+    env,
+    logging = {
+      on: false,
+      index: false,
+      logIndex: 1
+    };
 
   // Default test object options.
   wa11y.options = {
@@ -32,6 +37,30 @@
 
   // A public map of registered rules.
   wa11y.rules = {};
+
+  // Set wa11y logging.
+  wa11y.setLogging = function (logFlag, indexFlag) {
+    logging.on = logFlag;
+    logging.index = indexFlag;
+  };
+
+  // Log using wa11y, only if logging is true.
+  wa11y.log = function () {
+    if (!logging.on) {
+      return;
+    }
+    var args = Array.prototype.slice.apply(arguments);
+    wa11y.each(args, function (arg, index) {
+      if (typeof arg === "object") {
+        args[index] = JSON.stringify(arg);
+      }
+    });
+    args.unshift("wa11y:");
+    if (logging.index) {
+      args.unshift(logging.logIndex++ + ":");
+    }
+    console.log(args.join(" "));
+  };
   
   // Iterate over an object or an array.
   // source (Object|Array)
@@ -483,7 +512,8 @@
 
     // Shortcut for progress.emit("start", ...);
     progress.start = function () {
-      progress.emit.apply(null, ["start"].concat(Array.prototype.slice.apply(arguments)));
+      progress.emit.apply(null,
+        ["start"].concat(Array.prototype.slice.apply(arguments)));
       return progress;
     };
 
@@ -510,88 +540,98 @@
   };
 
   wa11y.tester = function (rule, options) {
+    wa11y.log("initializing tester", wa11y.get(options, "name") || "");
     var tester = makeEventedComponent("tester", options),
-      log = function (source) {
+      log = function (test, source) {
         return function (report) {
           tester.output.logger.log(report, {
             name: tester.options.name,
             description: tester.options.description,
-            severity: tester.test.options.severity,
-            level: tester.test.options.level
+            severity: test.options.severity,
+            level: test.options.level
           }, {
             srcType: source.srcType
             // path goes here
           });
         };
+      },
+      configureTest = function (progress, source, index) {
+        // Make actual test.
+        var test = wa11y.test(rule, tester.options.test.options);
+        wa11y.each(["complete", "fail"], function (event) {
+          test.on(event, function (report) {
+            wa11y.log("Firing tester's", tester.options.name, "test",
+              index, event, "event.");
+            report = report || {
+              severity: "INFO",
+              message: "Complete."
+            };
+            log(test, source)(report);
+            progress.emit(index);
+          });
+        });
+        return test;
+      },
+      // Run test.
+      // source (Object) - a source object to run the test on.
+      runTest = function (test, source) {
+        wa11y.log("running tester's", tester.options.name, "test. Source:",
+          source);
+        test.run.apply(undefined, [source.src, {
+          srcType: source.srcType,
+          engine: source.engine,
+          log: log(test, source)
+        }]);
       };
 
     // Make tester output.
     tester.output = tester.options.output || wa11y.output();
-    // Make actual test.
-    tester.test = wa11y.test(rule, tester.options.test.options);
-
-    // Run test.
-    // source (Object) - a source object to run the test on.
-    tester.runTest = function (source) {
-      tester.test.run.apply(undefined, [source.src, {
-        srcType: source.srcType,
-        engine: source.engine,
-        log: log(source)
-      }]);
-    };
 
     // Run test for all sources.
     // sources (Array) - array of sources.
     tester.run = function (sources) {
       var progress = wa11y.progress({output: tester.output})
-          .emit("start", sources)
-          .on("complete", function () {
-            tester.emit("complete", progress.output);
-          });
+        .on("complete", function () {
+          wa11y.log("tester", tester.options.name, "is finished.");
+          tester.emit("complete", progress.output);
+        })
+        .on("start", function () {
+          wa11y.log("received tester's", tester.options.name,
+            "progress' 'START' event.");
+          wa11y.each(sources, function (source, index) {
+            var engine;
+            if (typeof source === "string") {
+              source = sources[index] = {src: source};
+            }
+            source.srcType = source.srcType ||
+              wa11y.getSrcType(source.src);
 
-      wa11y.each(sources, function (source, index) {
-        var engine;
+            var test = configureTest(progress, source, index);
 
-        if (typeof source === "string") {
-          source = sources[index] = {src: source};
-        }
-        source.srcType = source.srcType ||
-          wa11y.getSrcType(source.src);
+            if (!test.supports(source.srcType)) {
+              progress.emit(index);
+              return;
+            }
 
-        wa11y.each(["complete", "fail"], function (event) {
-          tester.test.on(event, function (report) {
-            report = report || {
-              severity: "INFO",
-              message: "Complete."
-            };
-            log(source)(report);
-            progress.emit(index);
+            if (source.engine) {
+              runTest(test, source);
+              return;
+            }
+
+            engine = wa11y.engine.factory(source.srcType);
+            if (!engine) {
+              runTest(test, source);
+              return;
+            }
+            engine.process(source.src, function (err, engine) {
+              if (engine) {
+                source.engine = engine;
+              }
+              runTest(test, source);
+            });
           });
         });
-
-        if (!tester.test.supports(source.srcType)) {
-          progress.emit(index);
-          return;
-        }
-
-        if (source.engine) {
-          tester.runTest(source);
-          return;
-        }
-
-        engine = wa11y.engine.factory(source.srcType);
-        if (!engine) {
-          tester.runTest(source);
-          return;
-        }
-        engine.process(source.src, function (err, engine) {
-          if (engine) {
-            source.engine = engine;
-          }
-          tester.runTest(source);
-        });
-      });
-
+      progress.start(sources);
       return tester;
     };
 
@@ -605,23 +645,28 @@
 
   // Initialize wa11y object.
   wa11y.init = function () {
+    wa11y.log("initialization started.");
     var runner = makeEventedComponent("runner", wa11y.options),
       progress = wa11y.progress()
         .on("complete", function (output) {
+          wa11y.log("wa11y is finished", output.print());
           runner.emit("complete", output.print());
         })
         .on("start", function (testers, src) {
-          wa11y.each(testers, function (tester) {
-            src = src || tester.test.options.src;
-            if (!src) {
+          wa11y.log("received wa11y progress' 'START' event");
+          wa11y.each(testers, function (tester, name) {
+            var testerSrc = src ||
+              wa11y.get(tester, "options.test.options.src");
+            if (!testerSrc) {
+              wa11y.log("firing tester's", name, "'FAIL' event");
               tester.emit("fail", {
                 severity: "FATAL",
                 message: "No source supplied."
               });
               return;
             }
-            src = wa11y.makeArray(src);
-            tester.run.apply(undefined, [src]);
+            testerSrc = wa11y.makeArray(testerSrc);
+            tester.run.apply(undefined, [testerSrc]);
         });
       });
 
@@ -631,6 +676,7 @@
     // Configure the test runner.
     // config (Object) - an object of rule name: rule options pairs.
     runner.configure = function (config) {
+      wa11y.log("initialization started. Config:", config);
       var rules;
 
       wa11y.merge(runner.options, config);
@@ -644,6 +690,7 @@
 
         if (!rule) {return;}
 
+        wa11y.log("creating tester:", name);
         tester = wa11y.tester(rule.rule, {
           name: name,
           description: rule.description,
@@ -655,10 +702,12 @@
 
         wa11y.each(["complete", "fail"], function (event) {
           tester.on(event, function () {
+            wa11y.log("Firing tester's", name, event, "event.");
             progress.emit(name);
           });
         });
 
+        wa11y.log("adding", name, "to the list of testers");
         runner.testers[name] = tester;
       });
       return runner;
@@ -668,7 +717,9 @@
     // sources (Array|String) - a list|single of source documents to be
     // tested.
     runner.run = function (src) {
+      wa11y.log("running wa11y...");
       if (progress.isBusy()) {
+        wa11y.log("firing wa11y 'FAIL' event");
         runner.emit("fail", {
           severity: "FATAL",
           message: "Tester is in progress. Cancelling..."
@@ -680,6 +731,7 @@
       return runner;
     };
 
+    wa11y.log("initialization completed.");
     return runner;
   };
 
