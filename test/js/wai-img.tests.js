@@ -5,12 +5,15 @@
 
   module.exports = function (wa11y, expect) {
     describe("wai-img", function () {
-      var simpleSource = '<p><a class="the-link" href="https://github.com/yzen/wa11y">wa11y\'s Homepage</a></p>',
-        imageNoAltSource = '<p><img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" /></p>',
-        imageEmptyAltSource = '<p><img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" alt="" /></p>',
-        imageAltAsSrcSource = '<p><img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" alt="http://www.w3.org/WAI/images/wai-temp" /></p>',
-        imageSpaceAltSource = '<p><img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" alt="    " /></p>',
-        imageGoodSource = '<p><img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" alt="Hi I am here to help you" /></p>',
+      var createMarkup = function (innerHtml) {
+          return '<p>' + innerHtml + '</p>';
+        },
+        simpleSource = '<a class="the-link" href="https://github.com/yzen/wa11y">wa11y\'s Homepage</a>',
+        imageNoAltSource = '<img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" />',
+        imageEmptyAltSource = '<img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" alt="" />',
+        imageAltAsSrcSource = '<img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" alt="http://www.w3.org/WAI/images/wai-temp" />',
+        imageSpaceAltSource = '<img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" alt="    " />',
+        imageGoodSource = '<img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" alt="Hi I am here to help you" />',
         testValidator;
       
       beforeEach(function (done) {
@@ -36,7 +39,7 @@
           }
           done();
         });
-        testValidator.run(simpleSource);
+        testValidator.run(createMarkup(simpleSource));
       });
       
       it('Image with no "alt" attribute', function (done) {
@@ -46,14 +49,14 @@
             for (docId in log[key]) {
               thisLog = log[key][docId];
               expect(thisLog).to.deep.equal({
-                ERROR: ['Image <img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" />: does not have an "alt" attribute'],
+                ERROR: ['Image ' + imageNoAltSource + ': does not have an "alt" attribute'],
                 INFO: ['Complete.']
               });
             }
           }
           done();
         });
-        testValidator.run(imageNoAltSource);
+        testValidator.run(createMarkup(imageNoAltSource));
       });
 
       it('Image with an empty "alt" attribute', function (done) {
@@ -63,14 +66,14 @@
             for (docId in log[key]) {
               thisLog = log[key][docId];
               expect(thisLog).to.deep.equal({
-                ERROR: ['Image <img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" alt="" />: does not have an "alt" attribute'],
+                ERROR: ['Image ' + imageEmptyAltSource + ': does not have an "alt" attribute'],
                 INFO: ['Complete.']
               });
             }
           }
           done();
         });
-        testValidator.run(imageEmptyAltSource);
+        testValidator.run(createMarkup(imageEmptyAltSource));
       });
       
       it('Image with an "alt" attribute equal to "src"', function (done) {
@@ -80,14 +83,14 @@
             for (docId in log[key]) {
               thisLog = log[key][docId];
               expect(thisLog).to.deep.equal({
-                WARNING: ['Image <img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" alt="http://www.w3.org/WAI/images/wai-temp" />: has an "alt" attribute same as its "src"'],
+                WARNING: ['Image ' + imageAltAsSrcSource + ': has an "alt" attribute same as its "src"'],
                 INFO: ['Complete.']
               });
             }
           }
           done();
         });
-        testValidator.run(imageAltAsSrcSource);
+        testValidator.run(createMarkup(imageAltAsSrcSource));
       });
       
       it('Image with an "alt" attribute which has spaces in it', function (done) {
@@ -97,14 +100,14 @@
             for (docId in log[key]) {
               thisLog = log[key][docId];
               expect(thisLog).to.deep.equal({
-                ERROR: ['Image <img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" alt="    " />: has an invalid "alt" attribute'],
+                ERROR: ['Image ' + imageSpaceAltSource + ': has an invalid "alt" attribute'],
                 INFO: ['Complete.']
               });
             }
           }
           done();
         });
-        testValidator.run(imageSpaceAltSource);
+        testValidator.run(createMarkup(imageSpaceAltSource));
       });
       
       it('Image with a proper "alt" attribute', function (done) {
@@ -120,7 +123,59 @@
           }
           done();
         });
-        testValidator.run(imageGoodSource);
+        testValidator.run(createMarkup(imageGoodSource));
+      });
+      
+      it('Image with a proper "alt" attribute less than minWidth option', function (done) {
+        var minWidth = 100;
+        
+        testValidator.configure({
+          rules: {
+            "wai-img": {
+              minWidth: minWidth
+            }
+          }
+        });
+        testValidator.on("complete", function (log) {
+          var key, docId, thisLog;
+          for (key in log) {
+            for (docId in log[key]) {
+              thisLog = log[key][docId];
+              expect(thisLog).to.deep.equal({
+                WARNING: ['Image ' + imageGoodSource + ': has a short "alt" attribute which is less than ' + minWidth + ' characters.'],
+                INFO: ['Complete.']
+              });
+            }
+          }
+          done();
+        });
+        testValidator.run(createMarkup(imageGoodSource));
+      });
+      
+      it('Image with a proper "alt" attribute bigger than maxWidth option', function (done) {
+        var maxWidth = 5;
+        
+        testValidator.configure({
+          rules: {
+            "wai-img": {
+              maxWidth: maxWidth
+            }
+          }
+        });
+        testValidator.on("complete", function (log) {
+          var key, docId, thisLog;
+          for (key in log) {
+            for (docId in log[key]) {
+              thisLog = log[key][docId];
+              expect(thisLog).to.deep.equal({
+                WARNING: ['Image ' + imageGoodSource + ': has a long "alt" attribute which is bigger than ' + maxWidth + ' characters.'],
+                INFO: ['Complete.']
+              });
+            }
+          }
+          done();
+        });
+        testValidator.run(createMarkup(imageGoodSource));
       });
       
     });

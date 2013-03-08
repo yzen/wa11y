@@ -12,6 +12,8 @@
             alt = attributes.getNamedItem("alt") ? attributes.getNamedItem("alt").nodeValue : null,
             src = attributes.getNamedItem("src") ? attributes.getNamedItem("src").nodeValue : null,
             outerHTML = image.outerHTML,
+            minWidth = that.options.minWidth,
+            maxWidth = that.options.maxWidth,
             logMessage;
 
           if (!alt) {
@@ -34,6 +36,16 @@
               severity: 'WARNING',
               message: 'Image ' + outerHTML + ': has an "alt" attribute same as its "src"'
             };
+          } else if (minWidth && minWidth > alt.length) {
+            logMessage = {
+              severity: 'WARNING',
+              message: 'Image ' + outerHTML + ': has a short "alt" attribute which is less than ' + minWidth + ' characters.'
+            };
+          } else if (maxWidth && maxWidth < alt.length) {
+            logMessage = {
+              severity: 'WARNING',
+              message: 'Image ' + outerHTML + ': has a long "alt" attribute which is bigger than ' + maxWidth + ' characters.'
+            }
           }
           
           if (logMessage) {
@@ -69,7 +81,10 @@
       name: "wai-img",
       description: "Basic accessability image tests according to WCAG version 2.0",
       rule: rule,
-      options: {}
+      options: {
+        // minWidth - a minimum length threshold for alt attribure
+        // maxWidth - a maximum length threshold for alt attribute
+      }
     });
   });
 
