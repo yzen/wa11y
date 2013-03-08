@@ -8,13 +8,23 @@
       var createMarkup = function (innerHtml) {
           return '<p>' + innerHtml + '</p>';
         },
-        simpleSource = '<a class="the-link" href="https://github.com/yzen/wa11y">wa11y\'s Homepage</a>',
-        imageNoAltSource = '<img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" />',
-        imageEmptyAltSource = '<img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" alt="" />',
-        imageAltAsSrcSource = '<img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" alt="http://www.w3.org/WAI/images/wai-temp" />',
-        imageSpaceAltSource = '<img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" alt="    " />',
-        imageGoodSource = '<img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" alt="Hi I am here to help you" />',
+        sources = {
+          simpleSource: '<a class="the-link" href="https://github.com/yzen/wa11y" />wa11y\'s Homepage</a>',
+          imageNoAltSource: '<img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" />',
+          imageEmptyAltSource: '<img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" alt="" />',
+          imageAltAsSrcSource: '<img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" alt="http://www.w3.org/WAI/images/wai-temp" />',
+          imageSpaceAltSource: '<img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" alt="    " />',
+          imageGoodSource: '<img class="the-link" src="http://www.w3.org/WAI/images/wai-temp" alt="Hi I am here to help you" />',
+        },
         testValidator;
+      
+      // We have to normalize image source due to the difference between browsers and JSDOM.
+      // Browsers generate <img ... "abc"> tags while JSDOM generates <img ... "abc" /> tags
+      if (!wa11y.isNode) {
+        wa11y.each(sources, function (source, key) {
+          sources[key] = sources[key].replace(" />", ">");
+        });
+      }
       
       beforeEach(function (done) {
         testValidator = wa11y.init();
@@ -39,7 +49,7 @@
           }
           done();
         });
-        testValidator.run(createMarkup(simpleSource));
+        testValidator.run(createMarkup(sources.simpleSource));
       });
       
       it('Image with no "alt" attribute', function (done) {
@@ -49,14 +59,14 @@
             for (docId in log[key]) {
               thisLog = log[key][docId];
               expect(thisLog).to.deep.equal({
-                ERROR: ['Image ' + imageNoAltSource + ': does not have an "alt" attribute'],
+                ERROR: ['Image ' + sources.imageNoAltSource + ': does not have an "alt" attribute'],
                 INFO: ['Complete.']
               });
             }
           }
           done();
         });
-        testValidator.run(createMarkup(imageNoAltSource));
+        testValidator.run(createMarkup(sources.imageNoAltSource));
       });
 
       it('Image with an empty "alt" attribute', function (done) {
@@ -66,14 +76,14 @@
             for (docId in log[key]) {
               thisLog = log[key][docId];
               expect(thisLog).to.deep.equal({
-                ERROR: ['Image ' + imageEmptyAltSource + ': does not have an "alt" attribute'],
+                ERROR: ['Image ' + sources.imageEmptyAltSource + ': does not have an "alt" attribute'],
                 INFO: ['Complete.']
               });
             }
           }
           done();
         });
-        testValidator.run(createMarkup(imageEmptyAltSource));
+        testValidator.run(createMarkup(sources.imageEmptyAltSource));
       });
       
       it('Image with an "alt" attribute equal to "src"', function (done) {
@@ -83,14 +93,14 @@
             for (docId in log[key]) {
               thisLog = log[key][docId];
               expect(thisLog).to.deep.equal({
-                WARNING: ['Image ' + imageAltAsSrcSource + ': has an "alt" attribute same as its "src"'],
+                WARNING: ['Image ' + sources.imageAltAsSrcSource + ': has an "alt" attribute same as its "src"'],
                 INFO: ['Complete.']
               });
             }
           }
           done();
         });
-        testValidator.run(createMarkup(imageAltAsSrcSource));
+        testValidator.run(createMarkup(sources.imageAltAsSrcSource));
       });
       
       it('Image with an "alt" attribute which has spaces in it', function (done) {
@@ -100,14 +110,14 @@
             for (docId in log[key]) {
               thisLog = log[key][docId];
               expect(thisLog).to.deep.equal({
-                ERROR: ['Image ' + imageSpaceAltSource + ': has an invalid "alt" attribute'],
+                ERROR: ['Image ' + sources.imageSpaceAltSource + ': has an invalid "alt" attribute'],
                 INFO: ['Complete.']
               });
             }
           }
           done();
         });
-        testValidator.run(createMarkup(imageSpaceAltSource));
+        testValidator.run(createMarkup(sources.imageSpaceAltSource));
       });
       
       it('Image with a proper "alt" attribute', function (done) {
@@ -123,7 +133,7 @@
           }
           done();
         });
-        testValidator.run(createMarkup(imageGoodSource));
+        testValidator.run(createMarkup(sources.imageGoodSource));
       });
       
       it('Image with a proper "alt" attribute less than minWidth option', function (done) {
@@ -142,14 +152,14 @@
             for (docId in log[key]) {
               thisLog = log[key][docId];
               expect(thisLog).to.deep.equal({
-                WARNING: ['Image ' + imageGoodSource + ': has a short "alt" attribute which is less than ' + minWidth + ' characters.'],
+                WARNING: ['Image ' + sources.imageGoodSource + ': has a short "alt" attribute which is less than ' + minWidth + ' characters.'],
                 INFO: ['Complete.']
               });
             }
           }
           done();
         });
-        testValidator.run(createMarkup(imageGoodSource));
+        testValidator.run(createMarkup(sources.imageGoodSource));
       });
       
       it('Image with a proper "alt" attribute bigger than maxWidth option', function (done) {
@@ -168,14 +178,14 @@
             for (docId in log[key]) {
               thisLog = log[key][docId];
               expect(thisLog).to.deep.equal({
-                WARNING: ['Image ' + imageGoodSource + ': has a long "alt" attribute which is bigger than ' + maxWidth + ' characters.'],
+                WARNING: ['Image ' + sources.imageGoodSource + ': has a long "alt" attribute which is bigger than ' + maxWidth + ' characters.'],
                 INFO: ['Complete.']
               });
             }
           }
           done();
         });
-        testValidator.run(createMarkup(imageGoodSource));
+        testValidator.run(createMarkup(sources.imageGoodSource));
       });
       
     });
