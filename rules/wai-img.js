@@ -28,32 +28,32 @@
         if (!alt) {
           return {
             severity: "ERROR",
-            message: "Image " + outerHTML + ': does not have an "alt" attribute'
+            message: "Image " + outerHTML + ": does not have an \"alt\" attribute"
           };
         } else if (alt === "") {
           return {
             severity: "ERROR",
-            message: "Image " + outerHTML + ': has an empty "alt" attribute'
+            message: "Image " + outerHTML + ": has an empty \"alt\" attribute"
           };
         } else if (engine.trim(alt) === "") {
           return {
             severity: "ERROR",
-            message: "Image " + outerHTML + ': has an invalid "alt" attribute'
+            message: "Image " + outerHTML + ": has an invalid \"alt\" attribute"
           };
         } else if (alt === src) {
           return {
             severity: "WARNING",
-            message: "Image " + outerHTML + ': has an "alt" attribute same as its "src"'
+            message: "Image " + outerHTML + ": has an \"alt\" attribute same as its \"src\""
           };
         } else if (minWidth && minWidth > alt.length) {
           return {
             severity: "WARNING",
-            message: "Image " + outerHTML + ': has a short "alt" attribute which is less than ' + minWidth + " characters."
+            message: "Image " + outerHTML + ": has a short \"alt\" attribute which is less than " + minWidth + " characters."
           };
         } else if (maxWidth && maxWidth < alt.length) {
           return {
             severity: "WARNING",
-            message: "Image " + outerHTML + ': has a long "alt" attribute which is bigger than ' + maxWidth + " characters."
+            message: "Image " + outerHTML + ": has a long \"alt\" attribute which is bigger than " + maxWidth + " characters."
           }
         }
       };
