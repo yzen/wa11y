@@ -786,30 +786,34 @@
     process: "wa11y.engine.html.Sizzle"
   };
 
+  wa11y.engine.html.init = function (engine, doc) {
+    var wrapper = makeComponent();
+    // Find a selector by class, id, tag.
+    wrapper.find = function (selector) {
+      return engine(selector, doc);
+    };
+    // Get object's attribute by name.
+    wrapper.attr = function (obj, attrName) {
+      if (!obj || !obj.attributes) {
+        return;
+      }
+      var attr = obj.attributes.getNamedItem(attrName);
+      if (attr) {
+        return attr.nodeValue;
+      }
+    };
+    // Trim a string.
+    wrapper.trim = function (value) {
+      if (typeof value !== "string") {
+        return value;
+      }
+      return value.replace(/^\s+|\s+$/g, "");
+    };
+    return wrapper;
+  };
+
   wa11y.engine.html.Sizzle = function (src, callback) {
-    var wrap = function (Sizzle, doc) {
-      var wrapper = makeComponent();
-      wrapper.find = function (selector) {
-        return Sizzle(selector, doc);
-      };
-      wrapper.attr = function (obj, attrName) {
-        if (!obj || !obj.attributes) {
-          return;
-        }
-        
-        var attr = obj.attributes.getNamedItem(attrName);
-        if (attr) {
-          return attr.nodeValue;
-        }
-      };
-      wrapper.trim = function (value) {
-        if (typeof value !== "string") {
-          return value;
-        }
-        return value.replace(/^\s+|\s+$/g, "");
-      };
-      return wrapper;
-    }, doc, wrapper;
+    var doc, wrapper;
 
     if (src) {
       doc = document.implementation.createHTMLDocument("");
@@ -821,7 +825,7 @@
       callback(new Error("Missing selectors engine [Sizzle]."));
       return;
     }
-    wrapper = wrap(Sizzle, doc);
+    wrapper = wa11y.engine.html.init(Sizzle, doc);
     callback(undefined, wrapper);
   };
 
