@@ -792,6 +792,16 @@
       wrapper.find = function (selector) {
         return Sizzle(selector, doc);
       };
+      wrapper.attr = function (obj, attrName) {
+        if (!obj || !obj.attributes) {
+          return;
+        }
+        
+        var attr = obj.attributes.getNamedItem(attrName);
+        if (attr) {
+          return attr.nodeValue;
+        }
+      };
       wrapper.trim = function (value) {
         if (typeof value !== "string") {
           return value;
