@@ -6,78 +6,68 @@
     var rule = function (src) {
       var that = this,
         engine = this.engine,
-        images = engine.find("img"),
-        checkAltAttribute = function (image) {
-          // Rule defaults option merge
-          var defaults = {};
-          wa11y.merge(that.options, defaults);
-          
-          var attributes = image.attributes,
-            alt = engine.attr(image, "alt"),
-            src = engine.attr(image, "src"),
-            outerHTML = image.outerHTML,
-            minWidth = that.options.minWidth,
-            maxWidth = that.options.maxWidth,
-            logMessage;
+        // Find all images in the document.
+        images = engine.find("img");
 
-          if (!alt) {
-            logMessage = { 
-              severity: 'ERROR',
-              message: 'Image ' + outerHTML + ': does not have an "alt" attribute'
-            };
-          } else if (alt === "") {
-            logMessage = {
-              severity: 'ERROR',
-              message: 'Image ' + outerHTML + ': has an empty "alt" attribute'
-            };
-          } else if (engine.trim(alt) === "") {
-            logMessage = {
-              severity: 'ERROR',
-              message: 'Image ' + outerHTML + ': has an invalid "alt" attribute'
-            };
-          } else if (alt === src) {
-            logMessage = {
-              severity: 'WARNING',
-              message: 'Image ' + outerHTML + ': has an "alt" attribute same as its "src"'
-            };
-          } else if (minWidth && minWidth > alt.length) {
-            logMessage = {
-              severity: 'WARNING',
-              message: 'Image ' + outerHTML + ': has a short "alt" attribute which is less than ' + minWidth + ' characters.'
-            };
-          } else if (maxWidth && maxWidth < alt.length) {
-            logMessage = {
-              severity: 'WARNING',
-              message: 'Image ' + outerHTML + ': has a long "alt" attribute which is bigger than ' + maxWidth + ' characters.'
-            }
-          }
-          
-          if (logMessage) {
-            that.log(logMessage);
-          }
-        },
-
-        process = function (image) {
-          checkAltAttribute(image);
-        };
-
+      // If there are no images fine, complete the rule execution.
       if (images.length === 0) {
         that.complete({
-          severity: 'INFO',
-          message: 'No images found in the source.'
+          severity: "INFO",
+          message: "No images found in the source."
         });
         return;
       }
 
-      var i, length = images.length;
+      var checkAltAttribute = function (image) {
+        var alt = engine.attr(image, "alt"),
+          src = engine.attr(image, "src"),
+          outerHTML = image.outerHTML,
+          minWidth = that.options.minWidth,
+          maxWidth = that.options.maxWidth;
+
+        if (!alt) {
+          return {
+            severity: "ERROR",
+            message: "Image " + outerHTML + ': does not have an "alt" attribute'
+          };
+        } else if (alt === "") {
+          return {
+            severity: "ERROR",
+            message: "Image " + outerHTML + ': has an empty "alt" attribute'
+          };
+        } else if (engine.trim(alt) === "") {
+          return {
+            severity: "ERROR",
+            message: "Image " + outerHTML + ': has an invalid "alt" attribute'
+          };
+        } else if (alt === src) {
+          return {
+            severity: "WARNING",
+            message: "Image " + outerHTML + ': has an "alt" attribute same as its "src"'
+          };
+        } else if (minWidth && minWidth > alt.length) {
+          return {
+            severity: "WARNING",
+            message: "Image " + outerHTML + ': has a short "alt" attribute which is less than ' + minWidth + " characters."
+          };
+        } else if (maxWidth && maxWidth < alt.length) {
+          return {
+            severity: "WARNING",
+            message: "Image " + outerHTML + ': has a long "alt" attribute which is bigger than ' + maxWidth + " characters."
+          }
+        }
+      };
 
       wa11y.each(images, function (image) {
-        process(image);
+        var msg = checkAltAttribute(image);
+        if (msg) {
+          that.log(msg);
+        }
       });
-      
+
       that.complete({
-        severity: 'INFO',
-        message: 'Complete.'
+        severity: "INFO",
+        message: "Complete."
       });
     };
 
