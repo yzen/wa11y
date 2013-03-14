@@ -888,6 +888,17 @@
           });
         });
         
+        it("using attr function", function (done) {
+          engine.process("<div class='my' alt='something here'>This div is ARIA friendly</div>", function (err, wrapper) {
+            var buttons = wrapper.find(".my");
+            expect(wrapper.attr(buttons[0], "alt")).to.equal("something here");
+            expect(wrapper.attr(buttons[0], "class")).to.equal("my");
+            expect(wrapper.attr(buttons[0], "someAttr")).to.be.undefined;
+            expect(wrapper.attr(buttons, "someAttr")).to.be.undefined;
+            done();
+          });
+        });
+        
         it("engine functions inside the rule", function (done) {
           runs(this.test, 1);
           var testValidator = wa11y.init();
