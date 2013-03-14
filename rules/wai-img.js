@@ -8,9 +8,13 @@
         engine = this.engine,
         images = engine.find("img"),
         checkAltAttribute = function (image) {
+          // Rule defaults option merge
+          var defaults = {};
+          wa11y.merge(that.options, defaults);
+          
           var attributes = image.attributes,
-            alt = attributes.getNamedItem("alt") ? attributes.getNamedItem("alt").nodeValue : null,
-            src = attributes.getNamedItem("src") ? attributes.getNamedItem("src").nodeValue : null,
+            alt = engine.attr(image, "alt"),
+            src = engine.attr(image, "src"),
             outerHTML = image.outerHTML,
             minWidth = that.options.minWidth,
             maxWidth = that.options.maxWidth,
@@ -67,9 +71,9 @@
 
       var i, length = images.length;
 
-      for (i = 0; i < length; ++i) {
-        process(images[i]);
-      }
+      wa11y.each(images, function (image) {
+        process(image);
+      });
       
       that.complete({
         severity: 'INFO',
